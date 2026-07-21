@@ -2,7 +2,7 @@
 
 Privacy-first, EU-hosted captcha for WordPress. No tracking, no cookies, no image puzzles.
 
-[InfoPeak Captcha](https://captcha.infopeak.io) uses proof-of-work instead of surveillance: the visitor's browser solves a small computational challenge in the background - invisibly, with nothing to click. Bots pay a CPU cost that makes mass abuse expensive; humans wait a fraction of a second.
+[InfoPeak Captcha](https://infopeak.io/captcha) uses proof-of-work instead of surveillance: the visitor's browser solves a small computational challenge in the background - invisibly, with nothing to click. Bots pay a CPU cost that makes mass abuse expensive; humans wait a fraction of a second.
 
 ## What it protects
 
@@ -24,14 +24,14 @@ Each form can be toggled individually under **Settings → InfoPeak Captcha**.
 
 1. Download the latest release and install it via **Plugins → Add New → Upload Plugin**, or copy the `infopeak-captcha/` folder into `wp-content/plugins/`.
 2. Activate the plugin.
-3. Get a free sitekey and secret at [captcha.infopeak.io](https://captcha.infopeak.io).
+3. Get a free sitekey and secret at [infopeak.io/captcha](https://infopeak.io/captcha).
 4. Paste them into **Settings → InfoPeak Captcha** and choose which forms to protect.
 
 To try it before creating a key, use the public test credentials `ipk_test_sitekey` / `ipk_test_secret` - they work on any domain and never count against a quota. Never use them in production.
 
 ## Documentation
 
-Full developer documentation, API reference and framework guides: [captcha.infopeak.io/developers](https://captcha.infopeak.io)
+Full developer documentation, API reference and framework guides: [infopeak.io/captcha/developers](https://infopeak.io/captcha/developers)
 
 ## License
 

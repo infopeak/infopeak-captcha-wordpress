@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name:       InfoPeak Captcha
- * Plugin URI:        https://captcha.infopeak.io
+ * Plugin URI:        https://infopeak.io/captcha
  * Description:       Privacy-first, EU-hosted captcha for WordPress. No tracking, no cookies, no image puzzles - protects login, registration, password reset and comments.
  * Version:           1.0.0
  * Requires at least: 5.8

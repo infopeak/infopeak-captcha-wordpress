@@ -34,7 +34,7 @@ Each can be toggled individually on the settings page.
 
 **Setup takes two minutes**
 
-1. Create a free sitekey and secret at [captcha.infopeak.io](https://captcha.infopeak.io)
+1. Create a free sitekey and secret at [infopeak.io/captcha](https://infopeak.io/captcha)
 2. Paste them into Settings → InfoPeak Captcha
 3. Done - the widget appears on your forms and verification happens automatically
 
@@ -48,7 +48,7 @@ This plugin connects to the InfoPeak Captcha service at `captcha.infopeak.io` (E
 
 1. Install and activate the plugin.
 2. Go to Settings → InfoPeak Captcha.
-3. Enter your sitekey and secret from your [InfoPeak dashboard](https://captcha.infopeak.io) (free plan available).
+3. Enter your sitekey and secret from your [InfoPeak dashboard](https://infopeak.io/captcha) (free plan available).
 4. Choose which forms to protect. Done.
 
 == Frequently Asked Questions ==
