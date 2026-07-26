@@ -58,12 +58,17 @@ function ipkcap_print_widget() {
 }
 
 function ipkcap_enqueue_script() {
+	// wp_enqueue_script() accepts the $args array from WP 6.3 onwards; older versions expect a bool.
+	$args = version_compare( get_bloginfo( 'version' ), '6.3', '>=' )
+		? array( 'in_footer' => true, 'strategy' => 'defer' )
+		: true;
+
 	wp_enqueue_script(
 		'infopeak-captcha',
 		IPKCAP_API_ORIGIN . '/infopeak-captcha.js',
 		array(),
 		IPKCAP_VERSION,
-		array( 'in_footer' => true, 'strategy' => 'defer' )
+		$args
 	);
 }
 
