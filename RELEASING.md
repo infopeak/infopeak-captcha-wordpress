@@ -5,6 +5,31 @@ The plugin is published at https://wordpress.org/plugins/infopeak-captcha/.
 WordPress.org distributes plugins over Subversion, not Git. This repository is the source
 of truth for the code; the SVN repository is only a publishing channel.
 
+## The short version
+
+`tools/release.ps1` does the whole thing. It checks that the version number matches in all three
+places, refuses to run on an uncommitted working tree, copies the plugin files into the SVN working
+copy, creates the tag directory when the version is new, prints exactly what would be published,
+and only then asks for confirmation.
+
+Look first, publish nothing:
+
+```bash
+pwsh -File tools/release.ps1 -Message "Bump tested up to 7.1" -DryRun
+```
+
+Publish, after reading the diff it prints:
+
+```bash
+pwsh -File tools/release.ps1 -Message "Bump tested up to 7.1"
+```
+
+It checks out the SVN repository on first run if it is not there yet. Subversion asks for
+WordPress.org credentials at commit time and caches them afterwards.
+
+The rest of this document explains what the script does and why, for when something goes wrong
+or has to be done by hand.
+
 ## The two checkouts
 
 Keep them as siblings, never nested:
