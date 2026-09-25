@@ -2,8 +2,8 @@
 /**
  * Plugin Name:       InfoPeak Captcha
  * Plugin URI:        https://infopeak.io/captcha
- * Description:       Privacy-first, EU-hosted captcha for WordPress. No tracking, no cookies, no image puzzles - protects login, registration, password reset and comments.
- * Version:           1.0.0
+ * Description:       Privacy-first, EU-hosted captcha for WordPress. No tracking, no cookies, no image puzzles - protects login, registration, password reset, comments, Contact Form 7, WPForms and WooCommerce checkout.
+ * Version:           1.1.0
  * Requires at least: 5.8
  * Requires PHP:      7.4
  * Author:            InfoPeak
@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'IPKCAP_VERSION', '1.0.0' );
+define( 'IPKCAP_VERSION', '1.1.0' );
 define( 'IPKCAP_API_ORIGIN', 'https://captcha.infopeak.io' );
 define( 'IPKCAP_FIELD', 'infopeak-captcha-response' );
 
@@ -34,6 +34,10 @@ function ipkcap_get_settings() {
 		'enable_lostpw'    => 1,
 		'enable_comments'  => 1,
 		'skip_logged_in'   => 1,
+		// The integrations only do anything when the form plugin is active.
+		'enable_cf7'       => 1,
+		'enable_wpforms'   => 1,
+		'enable_woo'       => 1,
 	);
 	$saved = get_option( 'ipkcap_settings', array() );
 	return wp_parse_args( is_array( $saved ) ? $saved : array(), $defaults );
@@ -233,6 +237,119 @@ add_filter( 'preprocess_comment', function ( $commentdata ) {
 } );
 
 /* -------------------------------------------------------------------------
+ * Form plugins: Contact Form 7, WPForms, WooCommerce checkout
+ *
+ * All three submit with JavaScript and keep the visitor on the page. A token
+ * can only be verified once, so after every submit the widget is asked for a
+ * fresh one (infopeakCaptcha.reset), otherwise the next attempt would fail.
+ * ---------------------------------------------------------------------- */
+
+function ipkcap_integration_active( $key ) {
+	$s = ipkcap_get_settings();
+	return ipkcap_is_configured() && ! empty( $s[ $key ] );
+}
+
+// Load the widget script plus a small listener that resets the widget after
+// the form plugin's own AJAX submit. Called while the form is rendered.
+function ipkcap_enqueue_for_forms() {
+	ipkcap_enqueue_script();
+	static $done = false;
+	if ( $done ) {
+		return;
+	}
+	$done = true;
+	$js = <<<'JS'
+(function () {
+	function reset(el) {
+		if (!window.infopeakCaptcha || !el) return;
+		var w = el.querySelector ? el.querySelector('.infopeak-captcha') : null;
+		window.infopeakCaptcha.reset(w || undefined);
+	}
+	// Contact Form 7 fires this on the form after every submit, sent or not.
+	document.addEventListener('wpcf7submit', function (e) { reset(e.target); });
+	if (window.jQuery) {
+		// WPForms (AJAX forms) and the WooCommerce classic checkout.
+		jQuery(document).on('wpformsAjaxSubmitFailed wpformsAjaxSubmitSuccess', function (e) { reset(e.target); });
+		jQuery(document.body).on('checkout_error', function () { reset(document.querySelector('form.checkout')); });
+	}
+})();
+JS;
+	wp_add_inline_script( 'infopeak-captcha', $js, 'after' );
+}
+
+// --- Contact Form 7 ---
+
+// Add the widget in front of the submit button, unless the form already
+// places it itself with the [infopeak_captcha] tag.
+add_filter( 'wpcf7_form_elements', function ( $html ) {
+	if ( ! ipkcap_integration_active( 'enable_cf7' ) ) {
+		return $html;
+	}
+	ipkcap_enqueue_for_forms();
+	if ( strpos( $html, 'infopeak-captcha' ) !== false ) {
+		return $html;
+	}
+	$widget = ipkcap_widget_html();
+	$count  = 0;
+	$html   = preg_replace( '/(<(?:input[^>]+type="submit"|button[^>]+type="submit")[^>]*>)/i', $widget . '$1', $html, 1, $count );
+	return $count ? $html : $html . $widget;
+} );
+
+add_action( 'wpcf7_init', function () {
+	if ( function_exists( 'wpcf7_add_form_tag' ) ) {
+		wpcf7_add_form_tag( 'infopeak_captcha', function () {
+			return ipkcap_integration_active( 'enable_cf7' ) ? ipkcap_widget_html() : '';
+		} );
+	}
+} );
+
+// Contact Form 7's own spam check. Returning true marks the submission as spam.
+add_filter( 'wpcf7_spam', function ( $spam ) {
+	if ( $spam || ! ipkcap_integration_active( 'enable_cf7' ) ) {
+		return $spam;
+	}
+	return ! ipkcap_posted_token_valid();
+} );
+
+// --- WPForms ---
+
+add_action( 'wpforms_display_submit_before', function () {
+	if ( ! ipkcap_integration_active( 'enable_wpforms' ) ) {
+		return;
+	}
+	ipkcap_enqueue_for_forms();
+	ipkcap_print_widget();
+} );
+
+add_action( 'wpforms_process_before', function ( $entry, $form_data ) {
+	if ( ! ipkcap_integration_active( 'enable_wpforms' ) || ipkcap_posted_token_valid() ) {
+		return;
+	}
+	$process = function_exists( 'wpforms' ) ? ( method_exists( wpforms(), 'get' ) ? wpforms()->get( 'process' ) : wpforms()->process ) : null;
+	if ( $process && isset( $form_data['id'] ) ) {
+		$process->errors[ $form_data['id'] ]['header'] = ipkcap_error_message();
+	}
+}, 10, 2 );
+
+// --- WooCommerce checkout (classic checkout) ---
+
+// Placed after the billing fields: WooCommerce reloads the order review and
+// payment area with AJAX, which would leave a fresh, unstarted widget there.
+add_action( 'woocommerce_after_checkout_billing_form', function () {
+	if ( ! ipkcap_integration_active( 'enable_woo' ) ) {
+		return;
+	}
+	ipkcap_enqueue_for_forms();
+	ipkcap_print_widget();
+} );
+
+add_action( 'woocommerce_after_checkout_validation', function ( $data, $errors ) {
+	if ( ipkcap_integration_active( 'enable_woo' ) && ! ipkcap_posted_token_valid() ) {
+		$errors->add( 'ipkcap_failed', ipkcap_error_message() );
+	}
+}, 10, 2 );
+
+/* -------------------------------------------------------------------------
  * Admin: settings page
  * ---------------------------------------------------------------------- */
 
@@ -260,6 +377,9 @@ function ipkcap_sanitize_settings( $input ) {
 		'enable_lostpw'   => empty( $input['enable_lostpw'] ) ? 0 : 1,
 		'enable_comments' => empty( $input['enable_comments'] ) ? 0 : 1,
 		'skip_logged_in'  => empty( $input['skip_logged_in'] ) ? 0 : 1,
+		'enable_cf7'      => empty( $input['enable_cf7'] ) ? 0 : 1,
+		'enable_wpforms'  => empty( $input['enable_wpforms'] ) ? 0 : 1,
+		'enable_woo'      => empty( $input['enable_woo'] ) ? 0 : 1,
 	);
 }
 
@@ -302,6 +422,28 @@ function ipkcap_render_settings_page() {
 							<label><input type="checkbox" name="ipkcap_settings[enable_register]" value="1" <?php checked( $s['enable_register'] ); ?>> <?php esc_html_e( 'Registration form', 'infopeak-captcha' ); ?></label><br>
 							<label><input type="checkbox" name="ipkcap_settings[enable_lostpw]" value="1" <?php checked( $s['enable_lostpw'] ); ?>> <?php esc_html_e( 'Lost password form', 'infopeak-captcha' ); ?></label><br>
 							<label><input type="checkbox" name="ipkcap_settings[enable_comments]" value="1" <?php checked( $s['enable_comments'] ); ?>> <?php esc_html_e( 'Comment form', 'infopeak-captcha' ); ?></label>
+						</fieldset>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Form plugins', 'infopeak-captcha' ); ?></th>
+					<td>
+						<fieldset>
+							<?php
+							$ipkcap_plugins = array(
+								'enable_cf7'     => array( __( 'Contact Form 7', 'infopeak-captcha' ), defined( 'WPCF7_VERSION' ) ),
+								'enable_wpforms' => array( __( 'WPForms', 'infopeak-captcha' ), function_exists( 'wpforms' ) ),
+								'enable_woo'     => array( __( 'WooCommerce checkout', 'infopeak-captcha' ), class_exists( 'WooCommerce' ) ),
+							);
+							foreach ( $ipkcap_plugins as $ipkcap_key => $ipkcap_plugin ) :
+								?>
+								<label><input type="checkbox" name="ipkcap_settings[<?php echo esc_attr( $ipkcap_key ); ?>]" value="1" <?php checked( $s[ $ipkcap_key ] ); ?>> <?php echo esc_html( $ipkcap_plugin[0] ); ?></label>
+								<?php if ( ! $ipkcap_plugin[1] ) : ?>
+									<span class="description">(<?php esc_html_e( 'not installed', 'infopeak-captcha' ); ?>)</span>
+								<?php endif; ?>
+								<br>
+							<?php endforeach; ?>
+							<p class="description"><?php esc_html_e( 'The widget is added to every form automatically. In Contact Form 7 you can place it yourself with the [infopeak_captcha] tag.', 'infopeak-captcha' ); ?></p>
 						</fieldset>
 					</td>
 				</tr>
