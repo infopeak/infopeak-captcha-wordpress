@@ -4,7 +4,7 @@ Tags: captcha, spam, privacy, gdpr, login protection
 Requires at least: 5.8
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.2.0
+Stable tag: 1.2.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -105,6 +105,9 @@ Yes - 10,000 verifications per month, free forever. Paid plans start at 500,000 
 
 == Changelog ==
 
+= 1.2.1 =
+* Jetpack Forms: when the widget has been pasted into the form by hand, the plugin now still asks it for a fresh token after each submit, so a visitor can try again without reloading the page.
+
 = 1.2.0 =
 * New: protects Jetpack Forms. The widget is added to every Jetpack form and the token is verified on the server before the message is sent. A form that already contains the widget is left as it is.
 
@@ -118,6 +121,9 @@ Yes - 10,000 verifications per month, free forever. Paid plans start at 500,000 
 * Initial release: login, registration, lost-password and comment protection.
 
 == Upgrade Notice ==
+
+= 1.2.1 =
+Improves Jetpack Forms when the widget was added to the form by hand.
 
 = 1.2.0 =
 Adds protection for Jetpack Forms. Turned on automatically when Jetpack is installed.

@@ -3,7 +3,7 @@
  * Plugin Name:       InfoPeak Captcha
  * Plugin URI:        https://infopeak.io/captcha
  * Description:       Privacy-first, EU-hosted captcha for WordPress. No tracking, no cookies, no image puzzles - protects login, registration, password reset, comments, Contact Form 7, WPForms, Jetpack Forms and WooCommerce checkout.
- * Version:           1.2.0
+ * Version:           1.2.1
  * Requires at least: 5.8
  * Requires PHP:      7.4
  * Author:            InfoPeak
@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'IPKCAP_VERSION', '1.2.0' );
+define( 'IPKCAP_VERSION', '1.2.1' );
 define( 'IPKCAP_API_ORIGIN', 'https://captcha.infopeak.io' );
 define( 'IPKCAP_FIELD', 'infopeak-captcha-response' );
 
@@ -252,8 +252,12 @@ function ipkcap_integration_active( $key ) {
 
 // Load the widget script plus a small listener that resets the widget after
 // the form plugin's own AJAX submit. Called while the form is rendered.
-function ipkcap_enqueue_for_forms() {
-	ipkcap_enqueue_script();
+// With $with_script = false only the listener is added, for forms where the
+// widget script is already on the page (for example pasted in by hand).
+function ipkcap_enqueue_for_forms( $with_script = true ) {
+	if ( $with_script ) {
+		ipkcap_enqueue_script();
+	}
 	static $done = false;
 	if ( $done ) {
 		return;
@@ -296,6 +300,13 @@ function ipkcap_enqueue_for_forms() {
 	}
 })();
 JS;
+	if ( ! $with_script ) {
+		// A handle without a file carries the listener on its own.
+		wp_register_script( 'infopeak-captcha-reset', false, array(), IPKCAP_VERSION, true );
+		wp_enqueue_script( 'infopeak-captcha-reset' );
+		wp_add_inline_script( 'infopeak-captcha-reset', $js );
+		return;
+	}
 	wp_add_inline_script( 'infopeak-captcha', $js, 'after' );
 }
 
@@ -358,7 +369,11 @@ add_action( 'wpforms_process_before', function ( $entry, $form_data ) {
 // Add the widget in front of the submit button, unless the form already has it
 // (for example pasted in by hand), in which case it is left alone.
 add_filter( 'jetpack_contact_form_html', function ( $html ) {
-	if ( ! ipkcap_integration_active( 'enable_jetpack' ) || strpos( $html, 'infopeak-captcha' ) !== false ) {
+	if ( ! ipkcap_integration_active( 'enable_jetpack' ) ) {
+		return $html;
+	}
+	if ( strpos( $html, 'infopeak-captcha' ) !== false ) {
+		ipkcap_enqueue_for_forms( false );
 		return $html;
 	}
 	ipkcap_enqueue_for_forms();
