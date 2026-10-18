@@ -107,6 +107,7 @@ Yes - 10,000 verifications per month, free forever. Paid plans start at 500,000 
 
 = 1.2.2 =
 * The script that renews the token after a submit now lists jQuery as a dependency of the widget script, so it also works on pages where jQuery was not already loaded.
+* When your InfoPeak Captcha quota and its reserve are used up, visitors now see a clear message ("This form cannot check your message right now...") instead of "Captcha verification failed. Please try again.", which would not help them.
 
 = 1.2.1 =
 * Jetpack Forms: when the widget has been pasted into the form by hand, the plugin now still asks it for a fresh token after each submit, so a visitor can try again without reloading the page.

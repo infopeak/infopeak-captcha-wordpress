@@ -106,6 +106,9 @@ function ipkcap_verify_token( $token ) {
 		return false;
 	}
 	$body = json_decode( wp_remote_retrieve_body( $response ), true );
+	// A genuine token that was refused because the monthly quota and its reserve are used up:
+	// trying again will not help, so the visitor gets a different message (see ipkcap_error_message).
+	$GLOBALS['ipkcap_quota_exceeded'] = isset( $body['quota_exceeded'] ) && $body['quota_exceeded'] === true;
 	return isset( $body['valid'] ) && $body['valid'] === true;
 }
 
@@ -115,6 +118,9 @@ function ipkcap_posted_token_valid() {
 }
 
 function ipkcap_error_message() {
+	if ( ! empty( $GLOBALS['ipkcap_quota_exceeded'] ) ) {
+		return __( 'This form cannot check your message right now. Please try again later or contact the site owner.', 'infopeak-captcha' );
+	}
 	return __( 'Captcha verification failed. Please try again.', 'infopeak-captcha' );
 }
 
@@ -343,6 +349,14 @@ add_filter( 'wpcf7_spam', function ( $spam ) {
 	}
 	return ! ipkcap_posted_token_valid();
 } );
+
+// Contact Form 7 shows its generic spam message; use the clearer one when the quota is the reason.
+add_filter( 'wpcf7_display_message', function ( $message, $status ) {
+	if ( 'spam' === $status && ! empty( $GLOBALS['ipkcap_quota_exceeded'] ) ) {
+		return ipkcap_error_message();
+	}
+	return $message;
+}, 10, 2 );
 
 // --- WPForms ---
 
