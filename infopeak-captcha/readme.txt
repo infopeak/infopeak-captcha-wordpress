@@ -4,11 +4,11 @@ Tags: captcha, spam, privacy, gdpr, login protection
 Requires at least: 5.8
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.1.0
+Stable tag: 1.2.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Privacy-first, EU-hosted captcha. No tracking, no cookies, no puzzles. Protects login, comments, Contact Form 7, WPForms and WooCommerce checkout.
+Privacy-first, EU-hosted captcha. No tracking, no cookies, no puzzles. Protects login, comments, Contact Form 7, WPForms, Jetpack Forms and WooCommerce checkout.
 
 == Description ==
 
@@ -31,9 +31,10 @@ Instead of tracking visitors or making them click traffic lights, it uses **proo
 * Comment form (with an option to skip logged-in users)
 * Contact Form 7 forms
 * WPForms forms
+* Jetpack Forms (the contact form built into Jetpack)
 * WooCommerce checkout (classic checkout)
 
-Each can be toggled individually on the settings page. The widget is added to your forms automatically, so there is nothing to edit in Contact Form 7, WPForms or WooCommerce.
+Each can be toggled individually on the settings page. The widget is added to your forms automatically, so there is nothing to edit in Contact Form 7, WPForms, Jetpack Forms or WooCommerce.
 
 **Setup takes two minutes**
 
@@ -75,7 +76,7 @@ A small box above the submit button showing the verification status, and a "Prot
 
 The service is hosted entirely in the EU, sets no cookies and does not track visitors. There is no data transfer to the US.
 
-= Does it work with Contact Form 7, WPForms and WooCommerce? =
+= Does it work with Contact Form 7, WPForms, Jetpack Forms and WooCommerce? =
 
 Yes. Turn them on under Settings → InfoPeak Captcha and the widget appears in every form, in front of the submit button. In Contact Form 7 you can also place it yourself with the `[infopeak_captcha]` tag. After each submission the widget fetches a fresh token by itself, so a visitor who corrects a mistake and sends again is not stopped.
 
@@ -104,6 +105,9 @@ Yes - 10,000 verifications per month, free forever. Paid plans start at 500,000 
 
 == Changelog ==
 
+= 1.2.0 =
+* New: protects Jetpack Forms. The widget is added to every Jetpack form and the token is verified on the server before the message is sent. A form that already contains the widget is left as it is.
+
 = 1.1.0 =
 * Contact Form 7: the widget is added to every form, and submissions without a valid token are marked as spam. Place it yourself with the [infopeak_captcha] tag if you prefer.
 * WPForms: the widget is added to every form, including AJAX forms.
@@ -114,6 +118,9 @@ Yes - 10,000 verifications per month, free forever. Paid plans start at 500,000 
 * Initial release: login, registration, lost-password and comment protection.
 
 == Upgrade Notice ==
+
+= 1.2.0 =
+Adds protection for Jetpack Forms. Turned on automatically when Jetpack is installed.
 
 = 1.1.0 =
 Adds protection for Contact Form 7, WPForms and WooCommerce checkout. Turned on automatically for the plugins you have installed.

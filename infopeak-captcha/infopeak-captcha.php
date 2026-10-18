@@ -2,8 +2,8 @@
 /**
  * Plugin Name:       InfoPeak Captcha
  * Plugin URI:        https://infopeak.io/captcha
- * Description:       Privacy-first, EU-hosted captcha for WordPress. No tracking, no cookies, no image puzzles - protects login, registration, password reset, comments, Contact Form 7, WPForms and WooCommerce checkout.
- * Version:           1.1.0
+ * Description:       Privacy-first, EU-hosted captcha for WordPress. No tracking, no cookies, no image puzzles - protects login, registration, password reset, comments, Contact Form 7, WPForms, Jetpack Forms and WooCommerce checkout.
+ * Version:           1.2.0
  * Requires at least: 5.8
  * Requires PHP:      7.4
  * Author:            InfoPeak
@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'IPKCAP_VERSION', '1.1.0' );
+define( 'IPKCAP_VERSION', '1.2.0' );
 define( 'IPKCAP_API_ORIGIN', 'https://captcha.infopeak.io' );
 define( 'IPKCAP_FIELD', 'infopeak-captcha-response' );
 
@@ -37,6 +37,7 @@ function ipkcap_get_settings() {
 		// The integrations only do anything when the form plugin is active.
 		'enable_cf7'       => 1,
 		'enable_wpforms'   => 1,
+		'enable_jetpack'   => 1,
 		'enable_woo'       => 1,
 	);
 	$saved = get_option( 'ipkcap_settings', array() );
@@ -237,7 +238,7 @@ add_filter( 'preprocess_comment', function ( $commentdata ) {
 } );
 
 /* -------------------------------------------------------------------------
- * Form plugins: Contact Form 7, WPForms, WooCommerce checkout
+ * Form plugins: Contact Form 7, WPForms, Jetpack Forms, WooCommerce checkout
  *
  * All three submit with JavaScript and keep the visitor on the page. A token
  * can only be verified once, so after every submit the widget is asked for a
@@ -271,6 +272,27 @@ function ipkcap_enqueue_for_forms() {
 		// WPForms (AJAX forms) and the WooCommerce classic checkout.
 		jQuery(document).on('wpformsAjaxSubmitFailed wpformsAjaxSubmitSuccess', function (e) { reset(e.target); });
 		jQuery(document.body).on('checkout_error', function () { reset(document.querySelector('form.checkout')); });
+	}
+	// Jetpack Forms submit with fetch() and fire no event of their own. Remember
+	// which form was sent and ask for a fresh token once that request settles.
+	var jpForm = null, jpTimer = null, nativeFetch = window.fetch;
+	if (nativeFetch) {
+		document.addEventListener('submit', function (e) {
+			var f = e.target;
+			if (!f || !f.querySelector || !f.querySelector('input[name="action"][value="grunion-contact-form"]') || !f.querySelector('.infopeak-captcha')) return;
+			jpForm = f;
+			clearTimeout(jpTimer);
+			jpTimer = setTimeout(function () { jpForm = null; }, 5000);
+		}, true);
+		window.fetch = function () {
+			var p = nativeFetch.apply(this, arguments), f = jpForm;
+			if (f) {
+				jpForm = null;
+				var done = function () { reset(f); };
+				p.then(done, done);
+			}
+			return p;
+		};
 	}
 })();
 JS;
@@ -331,6 +353,38 @@ add_action( 'wpforms_process_before', function ( $entry, $form_data ) {
 	}
 }, 10, 2 );
 
+// --- Jetpack Forms ---
+
+// Add the widget in front of the submit button, unless the form already has it
+// (for example pasted in by hand), in which case it is left alone.
+add_filter( 'jetpack_contact_form_html', function ( $html ) {
+	if ( ! ipkcap_integration_active( 'enable_jetpack' ) || strpos( $html, 'infopeak-captcha' ) !== false ) {
+		return $html;
+	}
+	ipkcap_enqueue_for_forms();
+	$widget = ipkcap_widget_html();
+	$count  = 0;
+	// Jetpack's newer form block has the submit button as an inner block, the classic form builds <p class='contact-submit'>.
+	foreach ( array( '/(<div class="wp-block-button)/', "/(<p class='contact-submit'>)/", '/(<\/form>)/i' ) as $pattern ) {
+		$html = preg_replace( $pattern, $widget . '$1', $html, 1, $count );
+		if ( $count ) {
+			break;
+		}
+	}
+	return $html;
+} );
+
+// Jetpack aborts the submission and shows the message when a WP_Error is returned.
+add_filter( 'jetpack_contact_form_is_spam', function ( $is_spam ) {
+	if ( ! ipkcap_integration_active( 'enable_jetpack' ) || is_wp_error( $is_spam ) ) {
+		return $is_spam;
+	}
+	if ( ! ipkcap_posted_token_valid() ) {
+		return new WP_Error( 'ipkcap_failed', ipkcap_error_message() );
+	}
+	return $is_spam;
+} );
+
 // --- WooCommerce checkout (classic checkout) ---
 
 // Placed after the billing fields: WooCommerce reloads the order review and
@@ -379,6 +433,7 @@ function ipkcap_sanitize_settings( $input ) {
 		'skip_logged_in'  => empty( $input['skip_logged_in'] ) ? 0 : 1,
 		'enable_cf7'      => empty( $input['enable_cf7'] ) ? 0 : 1,
 		'enable_wpforms'  => empty( $input['enable_wpforms'] ) ? 0 : 1,
+		'enable_jetpack'  => empty( $input['enable_jetpack'] ) ? 0 : 1,
 		'enable_woo'      => empty( $input['enable_woo'] ) ? 0 : 1,
 	);
 }
@@ -433,6 +488,7 @@ function ipkcap_render_settings_page() {
 							$ipkcap_plugins = array(
 								'enable_cf7'     => array( __( 'Contact Form 7', 'infopeak-captcha' ), defined( 'WPCF7_VERSION' ) ),
 								'enable_wpforms' => array( __( 'WPForms', 'infopeak-captcha' ), function_exists( 'wpforms' ) ),
+								'enable_jetpack' => array( __( 'Jetpack Forms', 'infopeak-captcha' ), defined( 'JETPACK__VERSION' ) ),
 								'enable_woo'     => array( __( 'WooCommerce checkout', 'infopeak-captcha' ), class_exists( 'WooCommerce' ) ),
 							);
 							foreach ( $ipkcap_plugins as $ipkcap_key => $ipkcap_plugin ) :
