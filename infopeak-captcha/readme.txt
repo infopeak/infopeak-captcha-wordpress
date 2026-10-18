@@ -4,7 +4,7 @@ Tags: captcha, spam, privacy, gdpr, login protection
 Requires at least: 5.8
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.2.1
+Stable tag: 1.2.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -105,6 +105,9 @@ Yes - 10,000 verifications per month, free forever. Paid plans start at 500,000 
 
 == Changelog ==
 
+= 1.2.2 =
+* The script that renews the token after a submit now lists jQuery as a dependency of the widget script, so it also works on pages where jQuery was not already loaded.
+
 = 1.2.1 =
 * Jetpack Forms: when the widget has been pasted into the form by hand, the plugin now still asks it for a fresh token after each submit, so a visitor can try again without reloading the page.
 
@@ -121,6 +124,9 @@ Yes - 10,000 verifications per month, free forever. Paid plans start at 500,000 
 * Initial release: login, registration, lost-password and comment protection.
 
 == Upgrade Notice ==
+
+= 1.2.2 =
+Makes sure jQuery is loaded together with the widget, so the token is renewed after a submit on every page.
 
 = 1.2.1 =
 Improves Jetpack Forms when the widget was added to the form by hand.
