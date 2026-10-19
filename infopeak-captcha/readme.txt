@@ -96,7 +96,7 @@ The widget ships in 16 languages (English, German, French, Spanish, Italian, Dut
 
 = Is there a free plan? =
 
-Yes - 10,000 verifications per month, free forever. Paid plans start at 500,000 per month.
+Yes - 10,000 verifications per month, free forever. Paid plans start at 100,000 per month.
 
 == Screenshots ==
 
