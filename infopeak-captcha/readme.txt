@@ -4,11 +4,11 @@ Tags: captcha, spam, privacy, gdpr, login protection
 Requires at least: 5.8
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.2.2
+Stable tag: 1.2.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Privacy-first, EU-hosted captcha. No tracking, no cookies, no puzzles. Protects login, comments, Contact Form 7, WPForms, Jetpack Forms and WooCommerce checkout.
+EU-hosted, cookie-free CAPTCHA with nothing to solve. Rejected attempts are free. Protects login, comments, Contact Form 7, WPForms and WooCommerce.
 
 == Description ==
 
@@ -18,9 +18,11 @@ Instead of tracking visitors or making them click traffic lights, it uses **proo
 
 **Why site owners choose it**
 
-* **No personal data leaves the EU.** The service is hosted entirely in the EU. No US transfer, no CLOUD Act exposure.
+* **Hosted in the EU.** The service is hosted entirely in the EU. No personal data leaves the EU, no US transfer, no CLOUD Act exposure.
 * **No cookies, no tracking.** Nothing to declare in your cookie banner for the captcha.
 * **Nothing to solve.** No image grids, no distorted text, nothing to click. Fully accessible by design.
+* **Rejected attempts are free.** Only verifications that get through count toward your monthly quota. Bots that are stopped and fake or reused tokens never count.
+* **Set up in two minutes.** Paste a sitekey and a secret, and the forms of the plugins you use are protected automatically.
 * **Free plan.** 10,000 verifications per month at no cost.
 
 **What this plugin protects**
@@ -38,11 +40,17 @@ Each can be toggled individually on the settings page. The widget is added to yo
 
 **Setup takes two minutes**
 
-1. Create a free sitekey and secret at [infopeak.io/captcha](https://infopeak.io/captcha)
-2. Paste them into Settings → InfoPeak Captcha
-3. Done - the widget appears on your forms and verification happens automatically
+1. Install and activate the plugin, then open Settings → InfoPeak Captcha.
+2. Click "Create a free account" and create a key for your website. Your sitekey and secret are shown right away.
+3. Paste them into the settings page and save. The widget appears on your forms and verification happens automatically.
 
 You can try the plugin first with the public test credentials `ipk_test_sitekey` / `ipk_test_secret` - they work on any domain and never count against a quota.
+
+**For agencies**
+
+Building websites for clients? With the [InfoPeak partner programme](https://partner.infopeak.io/en/) you create a Captcha account for each client, see every client's usage in one console, get the usage alerts for your clients' sites and receive one invoice for all of them, at partner prices.
+
+Learn more about InfoPeak Captcha at [infopeak.io/products/captcha](https://infopeak.io/products/captcha).
 
 == External services ==
 
@@ -55,12 +63,14 @@ It is used for two things:
 
 No personal data about your visitors is stored by the service. See the [privacy policy](https://infopeak.io/privacy) and the [terms of service](https://infopeak.io/terms).
 
+The settings page also links to infopeak.io to create an account, sign in and read about the partner programme. These links include the admin's language and a `utm_source=wordpress_plugin` tag, so we can see that the visit came from the plugin. Nothing is sent unless the admin clicks a link.
+
 == Installation ==
 
 1. Install and activate the plugin.
 2. Go to Settings → InfoPeak Captcha.
-3. Enter your sitekey and secret. Get them free at [infopeak.io/captcha](https://infopeak.io/captcha).
-4. Choose which forms to protect. Done.
+3. Click "Create a free account" (or "sign in" if you already have one) and create a key for your website.
+4. Enter your sitekey and secret and choose which forms to protect. Done.
 
 == Frequently Asked Questions ==
 
@@ -75,6 +85,24 @@ A small box above the submit button showing the verification status, and a "Prot
 = Is it GDPR-compliant? =
 
 The service is hosted entirely in the EU, sets no cookies and does not track visitors. There is no data transfer to the US.
+
+= How is it different from reCAPTCHA or Cloudflare Turnstile? =
+
+reCAPTCHA is run by Google and Turnstile by Cloudflare, both US companies. InfoPeak Captcha is run by InfoPeak, a European company, and the service is hosted entirely in the EU. It sets no cookies, shows visitors nothing to solve, and only verifications that get through count toward your quota.
+
+If you switch from another captcha plugin, deactivate it first, so your visitors are not checked twice.
+
+= What counts as a verification? =
+
+A verification is counted when your server confirms a valid token, which happens when a protected form is sent. Bots that are stopped, fake or reused tokens and visitors who never send the form do not count.
+
+= Can I use one account for several websites? =
+
+Yes. Create a key for each website in your InfoPeak Captcha account. Each key only works on the domains you allow for it, and the monthly verifications are counted for the whole account, across all your websites.
+
+= I build websites for clients. How do I manage them? =
+
+Join the [InfoPeak partner programme](https://partner.infopeak.io/en/). You create a Captcha account for each client and get its sitekey and secret in the partner console. Your clients do not need an InfoPeak login. You see every client's usage in one place, the usage alerts for their sites are sent to you, and you receive one invoice for all your clients, at partner prices.
 
 = Does it work with Contact Form 7, WPForms, Jetpack Forms and WooCommerce? =
 
@@ -100,10 +128,19 @@ Yes - 10,000 verifications per month, free forever. Paid plans start at 100,000 
 
 == Screenshots ==
 
-1. The settings page - sitekey, secret and per-form toggles.
-2. The widget on the login form - verified automatically, no interaction needed.
+1. The settings page: sitekey, secret, the forms to protect, and a link to create a free account.
+2. A Contact Form 7 form. The widget verifies itself while the visitor writes, with nothing to click.
+3. The classic WooCommerce checkout, protected in front of the order button.
+4. Your InfoPeak Captcha account: the verifications that count this month, next to all challenges solved.
+5. Each website gets its own key. Copy the sitekey and secret into the plugin.
+6. The widget on the login form - verified automatically, no interaction needed.
 
 == Changelog ==
+
+= 1.2.3 =
+* The settings page now sends you to the InfoPeak Captcha sign-up, in your WordPress language, and lands you in the Captcha console where your sitekey and secret are. Before, it opened the general InfoPeak sign-up. A "sign in" link takes existing users straight to their keys.
+* New on the settings page: a short note for agencies about the InfoPeak partner programme.
+* The plugin's homepage link now points to the InfoPeak Captcha product page.
 
 = 1.2.2 =
 * The script that renews the token after a submit now lists jQuery as a dependency of the widget script, so it also works on pages where jQuery was not already loaded.
@@ -125,6 +162,9 @@ Yes - 10,000 verifications per month, free forever. Paid plans start at 100,000 
 * Initial release: login, registration, lost-password and comment protection.
 
 == Upgrade Notice ==
+
+= 1.2.3 =
+The settings page now takes you straight to the InfoPeak Captcha sign-up and your keys.
 
 = 1.2.2 =
 Makes sure jQuery is loaded together with the widget, so the token is renewed after a submit on every page.

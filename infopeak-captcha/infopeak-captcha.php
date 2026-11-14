@@ -1,9 +1,9 @@
 <?php
 /**
  * Plugin Name:       InfoPeak Captcha
- * Plugin URI:        https://infopeak.io/captcha
+ * Plugin URI:        https://infopeak.io/products/captcha
  * Description:       Privacy-first, EU-hosted captcha for WordPress. No tracking, no cookies, no image puzzles - protects login, registration, password reset, comments, Contact Form 7, WPForms, Jetpack Forms and WooCommerce checkout.
- * Version:           1.2.2
+ * Version:           1.2.3
  * Requires at least: 5.8
  * Requires PHP:      7.4
  * Author:            InfoPeak
@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'IPKCAP_VERSION', '1.2.2' );
+define( 'IPKCAP_VERSION', '1.2.3' );
 define( 'IPKCAP_API_ORIGIN', 'https://captcha.infopeak.io' );
 define( 'IPKCAP_FIELD', 'infopeak-captcha-response' );
 
@@ -467,6 +467,42 @@ function ipkcap_sanitize_settings( $input ) {
 	);
 }
 
+/**
+ * The admin's language as one of the languages infopeak.io offers, or '' when it offers none of them.
+ * The links then open the sign-up and partner pages in that language instead of guessing from the browser.
+ */
+function ipkcap_infopeak_lang() {
+	$locale = function_exists( 'get_user_locale' ) ? get_user_locale() : get_locale();
+	$code   = strtolower( substr( (string) $locale, 0, 2 ) );
+	if ( $code === 'nb' || $code === 'nn' ) {
+		$code = 'no';
+	}
+	$supported = array( 'en', 'da', 'de', 'fr', 'es', 'it', 'nl', 'pt', 'sv', 'no', 'fi', 'pl', 'cs', 'ro', 'uk', 'et' );
+	return in_array( $code, $supported, true ) ? $code : '';
+}
+
+/**
+ * Links from the settings page. They carry the admin's language and a plain utm_source tag that says the visit
+ * came from this plugin. Nothing about the site or its visitors is added, and nothing is sent until the admin clicks.
+ */
+function ipkcap_link( $what ) {
+	$lang = ipkcap_infopeak_lang();
+	if ( $what === 'partner' ) {
+		$url = 'https://partner.infopeak.io/' . ( $lang !== '' ? $lang : 'en' ) . '/';
+		return add_query_arg( array( 'utm_source' => 'wordpress_plugin', 'utm_medium' => 'plugin', 'utm_content' => 'partner' ), $url );
+	}
+	if ( $what === 'login' ) {
+		// The Captcha console. Someone who is not signed in is asked to sign in and comes back to it.
+		return 'https://infopeak.io/' . ( $lang !== '' ? $lang . '/' : '' ) . 'captcha';
+	}
+	$args = array( 'plan' => 'captcha' );
+	if ( $lang !== '' ) {
+		$args['lang'] = $lang;
+	}
+	$args += array( 'utm_source' => 'wordpress_plugin', 'utm_medium' => 'plugin', 'utm_content' => 'settings' );
+	return add_query_arg( $args, 'https://accounts.infopeak.io/signup' );
+}
+
 function ipkcap_render_settings_page() {
 	if ( ! current_user_can( 'manage_options' ) ) {
 		return;
@@ -478,9 +514,10 @@ function ipkcap_render_settings_page() {
 		<p>
 			<?php
 			printf(
-				/* translators: %s: link to the InfoPeak dashboard */
-				esc_html__( 'Privacy-first, EU-hosted captcha. Get your free sitekey and secret from your %s.', 'infopeak-captcha' ),
-				'<a href="https://auth.infopeak.io/free.php" target="_blank" rel="noopener">' . esc_html__( 'InfoPeak dashboard', 'infopeak-captcha' ) . '</a>'
+				/* translators: 1: link to create a free InfoPeak Captcha account, 2: link to sign in to the Captcha console */
+				esc_html__( 'Privacy-first, EU-hosted captcha. %1$s to get your sitekey and secret, or %2$s if you already have one.', 'infopeak-captcha' ),
+				'<a href="' . esc_url( ipkcap_link( 'signup' ) ) . '" target="_blank" rel="noopener">' . esc_html__( 'Create a free account', 'infopeak-captcha' ) . '</a>',
+				'<a href="' . esc_url( ipkcap_link( 'login' ) ) . '" target="_blank" rel="noopener">' . esc_html__( 'sign in', 'infopeak-captcha' ) . '</a>'
 			);
 			?>
 		</p>
@@ -548,6 +585,12 @@ function ipkcap_render_settings_page() {
 		</p>
 		<p>
 			<code>ipk_test_sitekey</code> / <code>ipk_test_secret</code>
+		</p>
+		<hr>
+		<h2><?php esc_html_e( 'Building websites for clients?', 'infopeak-captcha' ); ?></h2>
+		<p>
+			<?php esc_html_e( 'With the InfoPeak partner programme, agencies create a Captcha account for each client, see every client\'s usage in one console and receive one invoice for all of them, at partner prices.', 'infopeak-captcha' ); ?>
+			<a href="<?php echo esc_url( ipkcap_link( 'partner' ) ); ?>" target="_blank" rel="noopener"><?php esc_html_e( 'About the partner programme', 'infopeak-captcha' ); ?></a>
 		</p>
 	</div>
 	<?php
