@@ -13,7 +13,7 @@ msgid "Captcha verification failed. Please try again."
 msgstr "Captcha-kontrollen mislykkedes. Prøv igen."
 
 msgid "This form cannot check your message right now. Please try again later or contact the site owner."
-msgstr "Formularen kan ikke kontrollere din besked lige nu. Prøv igen senere, eller kontakt webstedets ejer."
+msgstr "Formularens sikkerhedskontrol er midlertidigt utilgængelig. Prøv igen senere, eller kontakt webstedets ejer."
 
 msgid "Form not sent"
 msgstr "Formularen blev ikke sendt"

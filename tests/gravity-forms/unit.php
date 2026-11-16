@@ -41,6 +41,14 @@ $scenarios = array(
 	'success_confirmation_untouched',
 	'danish_translation_loaded',
 	'language_pack_takes_precedence',
+	'gf_message_site_language_danish',
+	'gf_message_form_english_on_danish_site',
+	'gf_quota_message_both_languages',
+	'gf_late_refusal_uses_form_language',
+	'gf_pre27_die_uses_form_language',
+	'gf_danish_form_on_english_site',
+	'gf_form_language_without_translation_falls_back_to_english',
+	'gf_form_language_same_as_site_uses_site_translation',
 );
 
 if ( PHP_SAPI !== 'cli' ) {
@@ -365,6 +373,74 @@ switch ( $name ) {
 		rmdir( WP_LANG_DIR . '/plugins' );
 		rmdir( WP_LANG_DIR );
 		check( empty( $t['textdomains'] ), 'WordPress.org pack wins, bundled file not loaded' );
+		break;
+
+	case 'gf_message_site_language_danish':
+		apply_filters( 'init', null ); // Danish site: the bundled translation is loaded.
+		$t['http_response'] = ipk_test_siteverify( array( 'valid' => false ) );
+		$r                  = ipk_test_gf_submit( $protected );
+		check( strpos( $r['message'], 'Captcha-kontrollen mislykkedes. Prøv igen.' ) !== false, 'Danish form on a Danish site: Danish message' );
+		break;
+
+	case 'gf_message_form_english_on_danish_site':
+		apply_filters( 'init', null );
+		$form               = ipk_test_form( 5, array( 'ipkcap_enabled' => '1', 'ipkcap_lang' => 'en' ) );
+		$t['http_response'] = ipk_test_siteverify( array( 'valid' => false ) );
+		$r                  = ipk_test_gf_submit( $form );
+		check( strpos( $r['message'], 'Captcha verification failed. Please try again.' ) !== false, 'English form: English message' );
+		check( strpos( $r['message'], 'Captcha-kontrollen' ) === false, 'no Danish in the English form' );
+		check( strpos( apply_filters( 'gform_submit_button', '<button>Send</button>', $form ), 'data-lang="en"' ) !== false, 'English widget' );
+		break;
+
+	case 'gf_quota_message_both_languages':
+		apply_filters( 'init', null );
+		$t['http_response'] = ipk_test_siteverify( array( 'valid' => false, 'quota_exceeded' => true ) );
+		$r                  = ipk_test_gf_submit( $protected );
+		check( strpos( $r['message'], 'Formularens sikkerhedskontrol er midlertidigt utilgængelig. Prøv igen senere, eller kontakt webstedets ejer.' ) !== false, 'approved Danish quota text' );
+		$GLOBALS['ipkcap_gf_failed'] = array();
+		$r                           = ipk_test_gf_submit( ipk_test_form( 5, array( 'ipkcap_enabled' => '1', 'ipkcap_lang' => 'en' ) ) );
+		check( strpos( $r['message'], 'This form cannot check your message right now.' ) !== false, 'English quota text on the English form' );
+		break;
+
+	case 'gf_late_refusal_uses_form_language':
+		apply_filters( 'init', null );
+		$t['last_page']     = false; // Force the late check.
+		$t['http_response'] = ipk_test_siteverify( array( 'valid' => false ) );
+		$r                  = ipk_test_gf_submit( ipk_test_form( 5, array( 'ipkcap_enabled' => '1', 'ipkcap_lang' => 'en' ) ) );
+		check( isset( $r['aborted'] ) && strpos( $r['aborted'], 'Captcha verification failed. Please try again.' ) !== false, 'English late refusal' );
+		$r = ipk_test_gf_submit( $protected );
+		check( isset( $r['aborted'] ) && strpos( $r['aborted'], 'Captcha-kontrollen mislykkedes' ) !== false, 'Danish late refusal' );
+		break;
+
+	case 'gf_pre27_die_uses_form_language':
+		apply_filters( 'init', null );
+		$t['no_abort_filter'] = true;
+		$t['last_page']       = false;
+		$t['http_response']   = ipk_test_siteverify( array( 'valid' => false ) );
+		$r                    = ipk_test_gf_submit( ipk_test_form( 5, array( 'ipkcap_enabled' => '1', 'ipkcap_lang' => 'en' ) ) );
+		check( isset( $r['died'] ) && strpos( $r['died'], 'Captcha verification failed. Please try again.' ) !== false, 'English on the older-GF path' );
+		break;
+
+	case 'gf_danish_form_on_english_site':
+		$t['locale'] = 'en_US';
+		apply_filters( 'init', null ); // Nothing loaded for English.
+		$t['http_response'] = ipk_test_siteverify( array( 'valid' => false ) );
+		$r                  = ipk_test_gf_submit( ipk_test_form( 6, array( 'ipkcap_enabled' => '1', 'ipkcap_lang' => 'da' ) ) );
+		check( strpos( $r['message'], 'Captcha-kontrollen mislykkedes. Prøv igen.' ) !== false, 'Danish form on an English site: Danish from the bundled file' );
+		break;
+
+	case 'gf_form_language_without_translation_falls_back_to_english':
+		apply_filters( 'init', null );
+		$t['http_response'] = ipk_test_siteverify( array( 'valid' => false ) );
+		$r                  = ipk_test_gf_submit( ipk_test_form( 6, array( 'ipkcap_enabled' => '1', 'ipkcap_lang' => 'de' ) ) );
+		check( strpos( $r['message'], 'Captcha verification failed. Please try again.' ) !== false, 'German form without a German translation: English, not Danish' );
+		break;
+
+	case 'gf_form_language_same_as_site_uses_site_translation':
+		apply_filters( 'init', null );
+		$t['http_response'] = ipk_test_siteverify( array( 'valid' => false ) );
+		$r                  = ipk_test_gf_submit( ipk_test_form( 6, array( 'ipkcap_enabled' => '1', 'ipkcap_lang' => 'da' ) ) );
+		check( strpos( $r['message'], 'Captcha-kontrollen mislykkedes. Prøv igen.' ) !== false, 'Danish chosen on a Danish site: Danish' );
 		break;
 
 	default:

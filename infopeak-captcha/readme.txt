@@ -115,7 +115,7 @@ For WooCommerce the plugin protects the classic checkout, the one built with the
 
 Yes. Open the form, go to Form Settings and turn on "Protect this form with InfoPeak Captcha". Forms you do not turn it on for are left exactly as they are, so you can move one form at a time. The widget appears in front of the submit button (on the last page of a multi-page form), and the token is checked in Gravity Forms' own validation, before the entry is saved and before any notification is sent. It works with normal and AJAX submissions and with file uploads.
 
-If a form is in another language than the page it is on, choose the captcha language in the same place.
+If a form is in another language than the page it is on, choose the captcha language in the same place. The widget and the captcha's error messages then use that language, for example English on a Danish site.
 
 Moving from the reCAPTCHA Add-On: turn InfoPeak on for the form, send a test entry, then turn off "Enable reCAPTCHA for this form" under the form's reCAPTCHA settings. To go back, turn reCAPTCHA on again and InfoPeak off. The reCAPTCHA Add-On keeps loading Google's script on every page of the site while it is active, also on pages whose forms no longer use it, so deactivate it once all your forms have moved.
 
@@ -149,7 +149,7 @@ Yes - 10,000 verifications per month, free forever. Paid plans start at 100,000 
 == Changelog ==
 
 = 1.3.0 =
-* New: protects Gravity Forms. Turn it on form by form under Form Settings, InfoPeak Captcha. Forms you have not turned it on for are not changed, so you can move one form at a time from another captcha. If a form is in another language than its page, choose the captcha language there.
+* New: protects Gravity Forms. Turn it on form by form under Form Settings, InfoPeak Captcha. Forms you have not turned it on for are not changed, so you can move one form at a time from another captcha. If a form is in another language than its page, choose the captcha language there, and the widget and its error messages use that language.
 * The token is checked in Gravity Forms' own validation, before the entry is saved and before any notification is sent. This also covers submissions through GFAPI and the Gravity Forms REST API. A visitor who corrects a mistake can send again without reloading the page.
 * Tested with Gravity Forms 3.2.2: normal submissions (POST) and AJAX forms (Gravity Forms' iframe method), multi-page forms and file uploads, and side by side with the Gravity Forms reCAPTCHA Add-On 2.2.3 while moving a form over.
 * The messages visitors see when a captcha check fails are now also in Danish.

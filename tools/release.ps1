@@ -107,13 +107,32 @@ Expand-Archive -Path $zip -DestinationPath $export
 $source = Join-Path $export 'infopeak-captcha'
 $files = Get-ChildItem $source -Recurse -File | ForEach-Object { $_.FullName.Substring($source.Length + 1) }
 
-# A file whose content only differs in line endings is left as it is in SVN.
+# Text files whose content only differs in line endings (CRLF against LF) are left as they
+# are in SVN. Anything else, such as compiled .mo translations, is compared byte for byte.
+$textExtensions = @('.php', '.txt', '.po', '.pot', '.md', '.css', '.js', '.json', '.html', '.svg')
+
+function ConvertTo-Lf([byte[]]$bytes) {
+    $out = New-Object System.Collections.Generic.List[byte] $bytes.Length
+    for ($i = 0; $i -lt $bytes.Length; $i++) {
+        if ($bytes[$i] -eq 13 -and $i + 1 -lt $bytes.Length -and $bytes[$i + 1] -eq 10) { continue }
+        $out.Add($bytes[$i])
+    }
+    return ,$out.ToArray()
+}
+
+function Test-SameContent($from, $to) {
+    $a = [System.IO.File]::ReadAllBytes($from)
+    $b = [System.IO.File]::ReadAllBytes($to)
+    if ($textExtensions -contains [System.IO.Path]::GetExtension($from).ToLowerInvariant()) {
+        $a = ConvertTo-Lf $a
+        $b = ConvertTo-Lf $b
+    }
+    return [System.Linq.Enumerable]::SequenceEqual([byte[]]$a, [byte[]]$b)
+}
+
 function Copy-Changed($from, $to, $label) {
     if (Test-Path $to) {
-        $a = [System.IO.File]::ReadAllBytes($from)
-        $b = [System.IO.File]::ReadAllBytes($to)
-        $strip = { param($bytes) [byte[]]($bytes | Where-Object { $_ -ne 13 }) }
-        if ([System.Linq.Enumerable]::SequenceEqual([byte[]](& $strip $a), [byte[]](& $strip $b))) { return }
+        if (Test-SameContent $from $to) { return }
     } else {
         New-Item -ItemType Directory -Force (Split-Path -Parent $to) | Out-Null
     }

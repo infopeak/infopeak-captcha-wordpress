@@ -156,11 +156,60 @@ function ipkcap_posted_token_valid() {
 	return ipkcap_verify_token( $token );
 }
 
-function ipkcap_error_message() {
+// $lang: a form's own language (one of ipkcap_languages()), when it differs from the
+// site's, so a form set to English answers in English on a Danish site.
+function ipkcap_error_message( $lang = '' ) {
+	if ( ipkcap_is_other_language( $lang ) ) {
+		return ipkcap_translate_for(
+			empty( $GLOBALS['ipkcap_quota_exceeded'] )
+				? 'Captcha verification failed. Please try again.'
+				: 'This form cannot check your message right now. Please try again later or contact the site owner.',
+			$lang
+		);
+	}
 	if ( ! empty( $GLOBALS['ipkcap_quota_exceeded'] ) ) {
 		return __( 'This form cannot check your message right now. Please try again later or contact the site owner.', 'infopeak-captcha' );
 	}
 	return __( 'Captcha verification failed. Please try again.', 'infopeak-captcha' );
+}
+
+// True when $lang is a language InfoPeak offers and not the one the site runs in.
+function ipkcap_is_other_language( $lang ) {
+	if ( ! is_string( $lang ) || ! isset( ipkcap_languages()[ $lang ] ) ) {
+		return false;
+	}
+	$site = strtolower( substr( determine_locale(), 0, 2 ) );
+	if ( 'nb' === $site || 'nn' === $site ) {
+		$site = 'no';
+	}
+	return $lang !== $site;
+}
+
+// One of the plugin's messages in another language than the site's. English is the
+// language the plugin is written in. Other languages come from a WordPress.org language
+// pack or from languages/, and fall back to English when neither has the language.
+function ipkcap_translate_for( $text, $lang ) {
+	static $catalogs = array();
+	$locales = array(
+		'cs' => 'cs_CZ', 'da' => 'da_DK', 'de' => 'de_DE', 'es' => 'es_ES', 'et' => 'et', 'fi' => 'fi',
+		'fr' => 'fr_FR', 'it' => 'it_IT', 'nl' => 'nl_NL', 'no' => 'nb_NO', 'pl' => 'pl_PL', 'pt' => 'pt_PT',
+		'ro' => 'ro_RO', 'sv' => 'sv_SE', 'uk' => 'uk',
+	);
+	if ( ! isset( $locales[ $lang ] ) || ! class_exists( 'MO' ) ) {
+		return $text;
+	}
+	if ( ! isset( $catalogs[ $lang ] ) ) {
+		$catalogs[ $lang ] = false;
+		$name              = 'infopeak-captcha-' . $locales[ $lang ] . '.mo';
+		foreach ( array( WP_LANG_DIR . '/plugins/' . $name, __DIR__ . '/languages/' . $name ) as $file ) {
+			$mo = new MO();
+			if ( is_readable( $file ) && $mo->import_from_file( $file ) ) {
+				$catalogs[ $lang ] = $mo;
+				break;
+			}
+		}
+	}
+	return $catalogs[ $lang ] ? $catalogs[ $lang ]->translate( $text ) : $text;
 }
 
 /* -------------------------------------------------------------------------
@@ -531,6 +580,11 @@ function ipkcap_gf_active( $form ) {
 	return ipkcap_integration_active( 'enable_gf' ) && is_array( $form ) && ! empty( $form['ipkcap_enabled'] );
 }
 
+// The language chosen for the form under Form Settings, or '' for the page's.
+function ipkcap_gf_lang( $form ) {
+	return isset( $form['ipkcap_lang'] ) ? (string) $form['ipkcap_lang'] : '';
+}
+
 add_filter( 'gform_form_settings_fields', function ( $fields, $form ) {
 	if ( ! ipkcap_integration_active( 'enable_gf' ) ) {
 		return $fields;
@@ -572,8 +626,7 @@ add_filter( 'gform_submit_button', function ( $button, $form ) {
 			return $button;
 		}
 	}
-	$lang = isset( $form['ipkcap_lang'] ) ? (string) $form['ipkcap_lang'] : '';
-	return ipkcap_widget_html( $lang ) . $button;
+	return ipkcap_widget_html( ipkcap_gf_lang( $form ) ) . $button;
 }, 10, 2 );
 
 // Runs in Gravity Forms' own validation, before the entry is saved and before any
@@ -603,7 +656,7 @@ add_filter( 'gform_validation', function ( $result, $context = 'form-submit' ) {
 		$GLOBALS['ipkcap_gf_passed'][ (int) $form['id'] ] = true;
 	} else {
 		$result['is_valid'] = false;
-		$GLOBALS['ipkcap_gf_failed'][ (int) $form['id'] ] = ipkcap_error_message();
+		$GLOBALS['ipkcap_gf_failed'][ (int) $form['id'] ] = ipkcap_error_message( ipkcap_gf_lang( $form ) );
 	}
 	return $result;
 }, 9, 2 );
@@ -623,7 +676,7 @@ add_filter( 'gform_abort_submission_with_confirmation', function ( $abort, $form
 		$GLOBALS['ipkcap_gf_passed'][ (int) $form['id'] ] = true;
 		return $abort;
 	}
-	$GLOBALS['ipkcap_gf_refused'][ (int) $form['id'] ] = ipkcap_error_message();
+	$GLOBALS['ipkcap_gf_refused'][ (int) $form['id'] ] = ipkcap_error_message( ipkcap_gf_lang( $form ) );
 	return true;
 }, 10, 2 );
 
@@ -647,8 +700,8 @@ add_action( 'gform_pre_submission', function ( $form ) {
 		return;
 	}
 	wp_die(
-		esc_html( ipkcap_error_message() ),
-		esc_html__( 'Form not sent', 'infopeak-captcha' ),
+		esc_html( ipkcap_error_message( ipkcap_gf_lang( $form ) ) ),
+		esc_html( ipkcap_is_other_language( ipkcap_gf_lang( $form ) ) ? ipkcap_translate_for( 'Form not sent', ipkcap_gf_lang( $form ) ) : __( 'Form not sent', 'infopeak-captcha' ) ),
 		array( 'response' => 400, 'back_link' => true )
 	);
 }, 1 );

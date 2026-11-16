@@ -53,8 +53,40 @@ function get_option( $name, $default = false ) {
 function wp_parse_args( $args, $defaults ) {
 	return array_merge( $defaults, $args );
 }
-function __( $s ) { return $s; }
-function esc_html__( $s ) { return $s; }
+/** WordPress' MO reader, enough for the plugin's .mo files (no plurals or contexts). */
+class MO {
+	private $entries = array();
+	public function import_from_file( $file ) {
+		$b = file_get_contents( $file );
+		if ( strlen( $b ) < 28 || 0x950412de !== unpack( 'V', $b )[1] ) {
+			return false;
+		}
+		list( , $n, $o, $t ) = array_values( unpack( 'V4', substr( $b, 4, 16 ) ) );
+		for ( $i = 0; $i < $n; $i++ ) {
+			$oi = unpack( 'V2', substr( $b, $o + 8 * $i, 8 ) );
+			$ti = unpack( 'V2', substr( $b, $t + 8 * $i, 8 ) );
+			$this->entries[ substr( $b, $oi[2], $oi[1] ) ] = substr( $b, $ti[2], $ti[1] );
+		}
+		return true;
+	}
+	public function translate( $text ) {
+		return isset( $this->entries[ $text ] ) && '' !== $this->entries[ $text ] ? $this->entries[ $text ] : $text;
+	}
+}
+// __() translates with whatever load_textdomain() loaded for the plugin, as WordPress does.
+function __( $s ) {
+	static $mo = array();
+	$file = isset( $GLOBALS['ipk_test']['textdomains']['infopeak-captcha'] ) ? $GLOBALS['ipk_test']['textdomains']['infopeak-captcha'] : '';
+	if ( '' === $file ) {
+		return $s;
+	}
+	if ( ! isset( $mo[ $file ] ) ) {
+		$mo[ $file ] = new MO();
+		$mo[ $file ]->import_from_file( $file );
+	}
+	return $mo[ $file ]->translate( $s );
+}
+function esc_html__( $s ) { return __( $s ); }
 function esc_html_e( $s ) { echo $s; }
 function esc_attr( $s ) { return htmlspecialchars( (string) $s, ENT_QUOTES, 'UTF-8' ); }
 function esc_html( $s ) { return htmlspecialchars( (string) $s, ENT_QUOTES, 'UTF-8' ); }
