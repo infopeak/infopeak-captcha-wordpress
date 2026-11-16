@@ -36,3 +36,17 @@ Full developer documentation, API reference and framework guides: [infopeak.io/c
 ## License
 
 GPL-2.0-or-later. See [readme.txt](infopeak-captcha/readme.txt).
+
+## Tests
+
+Gravity Forms integration (synthetic data, no live site):
+
+```bash
+php tests/gravity-forms/unit.php
+```
+
+```bash
+PLAYWRIGHT_CORE=<path to playwright-core> CHROMIUM=<path to chrome> node tests/gravity-forms/browser.mjs
+```
+
+The browser test uses the real widget and the public test credentials, and stands in for Gravity Forms' submission scripts. It does not replace a run against a licensed Gravity Forms install.

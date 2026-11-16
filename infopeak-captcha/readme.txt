@@ -4,7 +4,7 @@ Tags: captcha, spam, privacy, gdpr, login protection
 Requires at least: 5.8
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.2.3
+Stable tag: 1.3.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -34,9 +34,10 @@ Instead of tracking visitors or making them click traffic lights, it uses **proo
 * Contact Form 7 forms
 * WPForms forms
 * Jetpack Forms (the contact form built into Jetpack)
+* Gravity Forms forms (turned on form by form)
 * WooCommerce checkout (classic checkout)
 
-Each can be toggled individually on the settings page. The widget is added to your forms automatically, so there is nothing to edit in Contact Form 7, WPForms, Jetpack Forms or WooCommerce.
+Each can be toggled individually on the settings page. The widget is added to your forms automatically, so there is nothing to edit in Contact Form 7, WPForms, Jetpack Forms or WooCommerce. In Gravity Forms you choose which forms to protect, under Form Settings.
 
 **Setup takes two minutes**
 
@@ -110,6 +111,16 @@ Yes. Turn them on under Settings → InfoPeak Captcha and the widget appears in 
 
 For WooCommerce the plugin protects the classic checkout, the one built with the `[woocommerce_checkout]` shortcode. The newer block-based checkout is not covered yet.
 
+= Does it work with Gravity Forms? =
+
+Yes. Open the form, go to Form Settings and turn on "Protect this form with InfoPeak Captcha". Forms you do not turn it on for are left exactly as they are, so you can move one form at a time. The widget appears in front of the submit button (on the last page of a multi-page form), and the token is checked in Gravity Forms' own validation, before the entry is saved and before any notification is sent. It works with normal and AJAX submissions and with file uploads.
+
+If a form is in another language than the page it is on, choose the captcha language in the same place.
+
+Moving from the reCAPTCHA Add-On: turn InfoPeak on for the form, send a test entry, then turn off "Enable reCAPTCHA for this form" under the form's reCAPTCHA settings. To go back, turn reCAPTCHA on again and InfoPeak off. The reCAPTCHA Add-On keeps loading Google's script on every page of the site while it is active, also on pages whose forms no longer use it, so deactivate it once all your forms have moved.
+
+Submissions through the Gravity Forms REST API or GFAPI::submit_form() to a protected form also need a valid token.
+
 = Does it work with caching plugins? =
 
 Yes. The widget is plain JavaScript loaded from captcha.infopeak.io and works on fully cached pages.
@@ -137,6 +148,12 @@ Yes - 10,000 verifications per month, free forever. Paid plans start at 100,000 
 
 == Changelog ==
 
+= 1.3.0 =
+* New: protects Gravity Forms. Turn it on form by form under Form Settings, InfoPeak Captcha. Forms you have not turned it on for are not changed, so you can move one form at a time from another captcha. If a form is in another language than its page, choose the captcha language there.
+* The token is checked in Gravity Forms' own validation, before the entry is saved and before any notification is sent. This also covers submissions through GFAPI and the Gravity Forms REST API. A visitor who corrects a mistake can send again without reloading the page.
+* Tested with Gravity Forms 3.2.2: normal submissions (POST) and AJAX forms (Gravity Forms' iframe method), multi-page forms and file uploads, and side by side with the Gravity Forms reCAPTCHA Add-On 2.2.3 while moving a form over.
+* The messages visitors see when a captcha check fails are now also in Danish.
+
 = 1.2.3 =
 * The settings page now sends you to the InfoPeak Captcha sign-up, in your WordPress language, and lands you in the Captcha console where your sitekey and secret are. Before, it opened the general InfoPeak sign-up. A "sign in" link takes existing users straight to their keys.
 * New on the settings page: a short note for agencies about the InfoPeak partner programme.
@@ -162,6 +179,9 @@ Yes - 10,000 verifications per month, free forever. Paid plans start at 100,000 
 * Initial release: login, registration, lost-password and comment protection.
 
 == Upgrade Notice ==
+
+= 1.3.0 =
+Adds protection for Gravity Forms, turned on form by form. Nothing changes on your forms until you turn it on.
 
 = 1.2.3 =
 The settings page now takes you straight to the InfoPeak Captcha sign-up and your keys.

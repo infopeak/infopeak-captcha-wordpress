@@ -1,0 +1,1 @@
+Syntetisk testbilag til InfoPeak Captcha-integrationen. Ingen rigtige data.

@@ -97,23 +97,46 @@ $tag = Join-Path $SvnPath "tags\$version"
 
 Step "Copying the plugin files into trunk"
 
-$files = @('infopeak-captcha.php', 'readme.txt', 'uninstall.php')
+# Every file Git tracks under infopeak-captcha/, exactly as committed (LF line endings),
+# not the Windows working copy (CRLF), which would make SVN show every line as changed.
+$export = Join-Path ([System.IO.Path]::GetTempPath()) ("ipkcap-release-" + [guid]::NewGuid())
+$zip = "$export.zip"
+& git -C $repo -c core.autocrlf=false archive --format=zip -o $zip HEAD infopeak-captcha
+if ($LASTEXITCODE -ne 0) { Fail "git archive failed." }
+Expand-Archive -Path $zip -DestinationPath $export
+$source = Join-Path $export 'infopeak-captcha'
+$files = Get-ChildItem $source -Recurse -File | ForEach-Object { $_.FullName.Substring($source.Length + 1) }
+
+# A file whose content only differs in line endings is left as it is in SVN.
+function Copy-Changed($from, $to, $label) {
+    if (Test-Path $to) {
+        $a = [System.IO.File]::ReadAllBytes($from)
+        $b = [System.IO.File]::ReadAllBytes($to)
+        $strip = { param($bytes) [byte[]]($bytes | Where-Object { $_ -ne 13 }) }
+        if ([System.Linq.Enumerable]::SequenceEqual([byte[]](& $strip $a), [byte[]](& $strip $b))) { return }
+    } else {
+        New-Item -ItemType Directory -Force (Split-Path -Parent $to) | Out-Null
+    }
+    Copy-Item $from $to -Force
+    Write-Host "  $label"
+}
+
 foreach ($f in $files) {
-    Copy-Item (Join-Path $plugin $f) (Join-Path $trunk $f) -Force
-    Write-Host "  trunk\$f"
+    Copy-Changed (Join-Path $source $f) (Join-Path $trunk $f) "trunk\$f"
 }
 
 if (Test-Path $tag) {
     Step "Updating the existing tag directory tags\$version"
     foreach ($f in $files) {
-        Copy-Item (Join-Path $plugin $f) (Join-Path $tag $f) -Force
-        Write-Host "  tags\$version\$f"
+        Copy-Changed (Join-Path $source $f) (Join-Path $tag $f) "tags\$version\$f"
     }
 } else {
     Step "Creating the new tag directory tags\$version from trunk"
     & svn copy $trunk $tag
     if ($LASTEXITCODE -ne 0) { Fail "svn copy failed." }
 }
+
+Remove-Item -Recurse -Force $export, $zip
 
 # Pick up any file that is new to SVN.
 & svn add --force --quiet (Join-Path $SvnPath 'trunk') (Join-Path $SvnPath 'tags') | Out-Null

@@ -1,0 +1,46 @@
+{
+  "0": {
+    "title": "IPK test - Personlig rundvisning",
+    "description": "Syntetisk testformular (ingen rigtige data).",
+    "labelPlacement": "top_label",
+    "button": { "type": "text", "text": "Book rundvisning" },
+    "fields": [
+      { "type": "text", "id": 1, "label": "Navn", "isRequired": true, "pageNumber": 1 },
+      { "type": "email", "id": 2, "label": "E-mail", "isRequired": true, "pageNumber": 1 }
+    ]
+  },
+  "1": {
+    "title": "IPK test - Kollegieansøgning (dansk)",
+    "description": "Syntetisk testformular med sider og filupload.",
+    "labelPlacement": "top_label",
+    "button": { "type": "text", "text": "Send ansøgning" },
+    "pagination": { "type": "steps", "pages": ["Ansøger", "Bilag"] },
+    "lastPageButton": { "type": "text", "text": "Forrige" },
+    "fields": [
+      { "type": "text", "id": 1, "label": "Navn", "isRequired": true, "pageNumber": 1 },
+      { "type": "email", "id": 2, "label": "E-mail", "isRequired": false, "pageNumber": 1 },
+      { "type": "page", "id": 4, "label": "", "pageNumber": 2, "nextButton": { "type": "text", "text": "Næste" }, "previousButton": { "type": "text", "text": "Forrige" } },
+      { "type": "fileupload", "id": 3, "label": "Bilag", "isRequired": true, "allowedExtensions": "pdf,txt", "multipleFiles": false, "pageNumber": 2 }
+    ]
+  },
+  "2": {
+    "title": "IPK test - International dormitory application",
+    "description": "Synthetic test form with a file upload, shown on a Danish page.",
+    "labelPlacement": "top_label",
+    "button": { "type": "text", "text": "Submit application" },
+    "fields": [
+      { "type": "text", "id": 1, "label": "Name", "isRequired": true, "pageNumber": 1 },
+      { "type": "fileupload", "id": 3, "label": "Document", "isRequired": false, "allowedExtensions": "pdf,txt", "multipleFiles": false, "pageNumber": 1 }
+    ]
+  },
+  "3": {
+    "title": "IPK test - Kontrol uden InfoPeak",
+    "description": "Syntetisk kontrolformular, InfoPeak ikke slået til.",
+    "labelPlacement": "top_label",
+    "button": { "type": "text", "text": "Send" },
+    "fields": [
+      { "type": "text", "id": 1, "label": "Navn", "isRequired": true, "pageNumber": 1 }
+    ]
+  },
+  "version": "3.2.2"
+}

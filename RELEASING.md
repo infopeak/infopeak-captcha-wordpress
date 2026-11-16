@@ -12,6 +12,12 @@ places, refuses to run on an uncommitted working tree, copies the plugin files i
 copy, creates the tag directory when the version is new, prints exactly what would be published,
 and only then asks for confirmation.
 
+What gets published is every file Git tracks under `infopeak-captcha/` in the last commit
+(including `languages/`), with LF line endings. Tests, tools and build output live outside that
+folder and never reach WordPress.org. A file that only differs in line endings is left alone.
+After changing a `.po` file in `infopeak-captcha/languages/`, run `python tools/build-mo.py`
+and commit the `.mo` file with it.
+
 Look first, publish nothing:
 
 ```bash
