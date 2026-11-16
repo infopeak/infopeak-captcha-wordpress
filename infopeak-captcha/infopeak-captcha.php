@@ -663,7 +663,7 @@ add_filter( 'gform_validation', function ( $result, $context = 'form-submit' ) {
 
 // Second check, after validation and before the entry is stored and notifications go
 // out. Gravity Forms (2.7 and later) runs this filter for every final submission,
-// including GFAPI::submit_form() and the REST API, whatever the page fields say, and
+// including GFAPI::submit_form(), whatever the page fields say, and
 // never when moving between pages. Normally the token was already confirmed above;
 // if that check was skipped for any reason, it is done now. A refused submission ends
 // with Gravity Forms' own confirmation response, which here carries the error, so it
