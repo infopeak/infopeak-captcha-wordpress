@@ -79,3 +79,6 @@ add_filter( 'pre_wp_mail', function ( $return, $atts ) {
 
 // The tests send several comments in a row from the same address.
 add_filter( 'comment_flood_filter', '__return_false' );
+
+// Fluent Forms allows 5 stored submissions per IP in 30 seconds; the tests send more.
+add_filter( 'fluentform/prevent_malicious_attacks', '__return_false' );

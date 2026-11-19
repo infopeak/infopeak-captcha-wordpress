@@ -36,13 +36,15 @@ up)
 	wpcli core install --url="$IPK_URL" --title="IPK test" --admin_user="$IPK_ADMIN_USER" --admin_password="$IPK_ADMIN_PASS" --admin_email=admin@example.test --skip-email
 	wpcli config set IPK_TEST_KEY "$IPK_TEST_KEY"
 	wpcli config set JETPACK_DEV_DEBUG true --raw
+	# All form plugins at once need more than PHP's default 128M, in wp-cli too.
+	wpcli config set WP_MEMORY_LIMIT 512M
 	wpcli rewrite structure '/%postname%/' --hard
 	wpcli option update users_can_register 1
 	wpcli option update comment_moderation 0
 	wpcli option update comment_previously_approved 0
 	wpcli user create "$IPK_USER" ipktest@example.test --user_pass="$IPK_USER_PASS" --role=subscriber
 	put_dir "$here/mu-plugin" /var/www/html/wp-content/mu-plugins
-	wpcli plugin install contact-form-7 wpforms-lite jetpack woocommerce cache-enabler plugin-check --activate
+	wpcli plugin install contact-form-7 wpforms-lite jetpack woocommerce fluentform cache-enabler plugin-check --activate
 	wpcli jetpack module activate contact-form || true
 	wpcli option update ipkcap_settings '{"sitekey":"ipk_test_sitekey","secret":"ipk_test_secret"}' --format=json
 	remote "cat > /tmp/$P-setup-content.php" < "$here/setup-content.php"

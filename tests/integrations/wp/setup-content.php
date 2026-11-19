@@ -88,7 +88,90 @@ function ipk_jp_shortcode( $subject ) {
 	return '[contact-form subject="' . $subject . '" to="admin@example.test"][contact-field label="Name" type="name" required="1"/][contact-field label="Email" type="email" required="1"/][contact-field label="Message" type="textarea"/][/contact-form]';
 }
 
+// --- Fluent Forms ---
+function ipk_ff_field( $element, $name, $label, $required, $extra = array() ) {
+	$rules = array( 'required' => array( 'value' => $required, 'message' => 'This field is required' ) );
+	if ( 'input_email' === $element ) {
+		$rules['email'] = array( 'value' => true, 'message' => 'This field must contain a valid email' );
+	}
+	return array_merge(
+		array(
+			'element'        => $element,
+			'attributes'     => array( 'type' => 'textarea' === $element ? null : ( 'input_email' === $element ? 'email' : 'text' ), 'name' => $name, 'value' => '', 'class' => '', 'placeholder' => '' ),
+			'settings'       => array( 'container_class' => '', 'label' => $label, 'admin_field_label' => '', 'label_placement' => '', 'help_message' => '', 'validation_rules' => $rules, 'conditional_logics' => array() ),
+			'editor_options' => array( 'template' => 'textarea' === $element ? 'inputTextarea' : 'inputText' ),
+			'uniqElKey'      => 'el_' . $name,
+		),
+		$extra
+	);
+}
+function ipk_fluent( $title, $multistep ) {
+	global $wpdb;
+	$table = $wpdb->prefix . 'fluentform_forms';
+	$name  = ipk_ff_field( 'input_text', 'full_name', 'Name', true );
+	$email = ipk_ff_field( 'input_email', 'email', 'Email', true );
+	$msg   = ipk_ff_field( 'textarea', 'message', 'Message', false );
+	$step  = array(
+		'element'        => 'form_step',
+		'attributes'     => array( 'id' => '', 'class' => '' ),
+		'settings'       => array( 'prev_btn' => array( 'type' => 'default', 'text' => 'Previous', 'img_url' => '' ), 'next_btn' => array( 'type' => 'default', 'text' => 'Next', 'img_url' => '' ) ),
+		'editor_options' => array( 'title' => 'Form Step', 'template' => 'formStep' ),
+		'uniqElKey'      => 'el_step1',
+	);
+	$fields = array(
+		'fields'       => $multistep ? array( $name, $email, $step, $msg ) : array( $name, $email, $msg ),
+		'submitButton' => array(
+			'uniqElKey'      => 'el_submit',
+			'element'        => 'button',
+			'attributes'     => array( 'type' => 'submit', 'class' => '' ),
+			'settings'       => array( 'align' => 'left', 'button_style' => 'default', 'container_class' => '', 'help_message' => '', 'background_color' => '#1a7efb', 'button_size' => 'md', 'color' => '#ffffff', 'button_ui' => array( 'type' => 'default', 'text' => 'Submit Form', 'img_url' => '' ) ),
+			'editor_options' => array( 'title' => 'Submit Button' ),
+		),
+	);
+	if ( $multistep ) {
+		$fields['stepsWrapper'] = array(
+			'stepStart' => array( 'element' => 'step_start', 'attributes' => array( 'id' => '', 'class' => '' ), 'settings' => array( 'progress_indicator' => '', 'step_titles' => array() ), 'editor_options' => array( 'title' => 'Start Paging' ) ),
+			'stepEnd'   => array( 'element' => 'step_end', 'attributes' => array( 'id' => '', 'class' => '' ), 'settings' => array( 'prev_btn' => array( 'type' => 'default', 'text' => 'Previous', 'img_url' => '' ) ), 'editor_options' => array( 'title' => 'End Paging' ) ),
+		);
+	}
+	$row = array( 'title' => $title, 'status' => 'published', 'form_fields' => wp_json_encode( $fields ), 'type' => 'form', 'has_payment' => 0, 'created_by' => 1, 'created_at' => current_time( 'mysql' ), 'updated_at' => current_time( 'mysql' ) );
+	$id  = (int) $wpdb->get_var( $wpdb->prepare( "SELECT id FROM $table WHERE title = %s", $title ) );
+	if ( $id ) {
+		$wpdb->update( $table, $row, array( 'id' => $id ) );
+	} else {
+		$wpdb->insert( $table, $row );
+		$id = (int) $wpdb->insert_id;
+	}
+	$meta = array(
+		'formSettings'  => array(
+			'confirmation' => array( 'redirectTo' => 'samePage', 'messageToShow' => 'Thank you! IPK-FLUENT-OK', 'customPage' => null, 'samePageFormBehavior' => 'hide_form', 'customUrl' => null ),
+			'restrictions' => array(),
+			'layout'       => array( 'labelPlacement' => 'top', 'helpMessagePlacement' => 'with_label', 'errorMessagePlacement' => 'inline' ),
+		),
+		'notifications' => array(
+			'name' => 'Admin Notification Email', 'enabled' => true, 'email_template' => '',
+			'sendTo' => array( 'type' => 'email', 'email' => '{wp.admin_email}', 'field' => 'email', 'routing' => array() ),
+			'fromName' => '', 'fromEmail' => '', 'replyTo' => '', 'bcc' => '',
+			'subject' => 'Fluent Forms entry: ' . $title, 'message' => '<p>{all_data}</p>',
+			'conditionals' => array( 'status' => false, 'type' => 'all', 'conditions' => array() ),
+		),
+	);
+	$mt = $wpdb->prefix . 'fluentform_form_meta';
+	foreach ( $meta as $key => $value ) {
+		$wpdb->delete( $mt, array( 'form_id' => $id, 'meta_key' => $key ) );
+		$wpdb->insert( $mt, array( 'form_id' => $id, 'meta_key' => $key, 'value' => wp_json_encode( $value ) ) );
+	}
+	return '[fluentform id="' . $id . '"]';
+}
+// Multi-step forms are a Fluent Forms Pro feature; the free version draws no steps.
+$ff_one = ipk_fluent( 'IPK Fluent', false );
+$ff_two = ipk_fluent( 'IPK Fluent 2', false );
+
 // --- Pages ---
+ipk_page( 'fluent', 'Fluent Forms', $ff_one );
+ipk_page( 'fluent-two', 'Fluent Forms two forms', $ff_one . "\n\n" . $ff_two );
+ipk_page( 'cached-fluent', 'Fluent Forms cached', $ff_one );
+
 ipk_page( 'cf7', 'CF7', $cf7a );
 ipk_page( 'cf7-two', 'CF7 two forms', $cf7a . "\n\n" . $cf7b );
 ipk_page( 'cached-cf7', 'CF7 cached', $cf7a );
@@ -107,7 +190,7 @@ ipk_page( 'ipk-comments', 'Comments', '<p>Synthetic post for comments.</p>', 'po
 ipk_page( 'cached-comments', 'Comments cached', '<p>Synthetic post for comments, cached.</p>', 'post', 'open' );
 
 // Several form plugins on one page, plus the comment form.
-ipk_page( 'mixed', 'Mixed forms', $cf7a . "\n\n" . $wpf_ajax . "\n\n" . ipk_jp_block( 'IPK JP mixed' ), 'post', 'open' );
+ipk_page( 'mixed', 'Mixed forms', $cf7a . "\n\n" . $wpf_ajax . "\n\n" . ipk_jp_block( 'IPK JP mixed' ) . "\n\n" . $ff_one, 'post', 'open' );
 
 // --- WooCommerce (classic checkout, shortcode) ---
 $product_id = wc_get_product_id_by_sku( 'IPK-TEST' );

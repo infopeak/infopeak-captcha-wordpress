@@ -61,6 +61,7 @@ $marker = array(
 	'jetpack'        => 'jetpack_contact_form_is_spam',
 	'woocommerce'    => 'woocommerce_after_checkout_validation',
 	'gravity-forms'  => 'gform_validation',
+	'fluent-forms'   => 'fluentform/validation_errors',
 );
 function loaded( $marker ) {
 	$on = array();
@@ -92,7 +93,7 @@ switch ( $name ) {
 		break;
 
 	case 'active_plugins_list_loads_now':
-		$t['options']['active_plugins'] = array( 'contact-form-7/wp-contact-form-7.php', 'wpforms-lite/wpforms.php', 'jetpack/jetpack.php', 'woocommerce/woocommerce.php', 'gravityforms/gravityforms.php' );
+		$t['options']['active_plugins'] = array( 'contact-form-7/wp-contact-form-7.php', 'wpforms-lite/wpforms.php', 'jetpack/jetpack.php', 'woocommerce/woocommerce.php', 'gravityforms/gravityforms.php', 'fluentform/fluentform.php' );
 		load_plugin();
 		check( loaded( $marker ) === array_keys( $marker ), 'all loaded while the plugin file loads: ' . implode( ',', loaded( $marker ) ) );
 		break;
@@ -122,9 +123,10 @@ switch ( $name ) {
 		check( loaded( $marker ) === array( 'core' ), 'nothing yet' );
 		// A form plugin that is not in the list (must-use plugin, bundled by the host) has loaded by now.
 		define( 'JETPACK__VERSION', '16.4' );
+		define( 'FLUENTFORM_VERSION', '6.2.17' );
 		ipk_test_define_gf();
 		fire_plugins_loaded();
-		check( loaded( $marker ) === array( 'core', 'jetpack', 'gravity-forms' ), 'loaded on plugins_loaded: ' . implode( ',', loaded( $marker ) ) );
+		check( loaded( $marker ) === array( 'core', 'jetpack', 'gravity-forms', 'fluent-forms' ), 'loaded on plugins_loaded: ' . implode( ',', loaded( $marker ) ) );
 		break;
 
 	case 'loaded_after_plugins_loaded_fired':
@@ -143,7 +145,7 @@ switch ( $name ) {
 		break;
 
 	case 'hook_priorities_unchanged':
-		$t['options']['active_plugins'] = array( 'contact-form-7/wp-contact-form-7.php', 'wpforms-lite/wpforms.php', 'jetpack/jetpack.php', 'woocommerce/woocommerce.php', 'gravityforms/gravityforms.php' );
+		$t['options']['active_plugins'] = array( 'contact-form-7/wp-contact-form-7.php', 'wpforms-lite/wpforms.php', 'jetpack/jetpack.php', 'woocommerce/woocommerce.php', 'gravityforms/gravityforms.php', 'fluentform/fluentform.php' );
 		load_plugin();
 		$expect = array(
 			'authenticate' => 30, 'registration_errors' => 10, 'lostpassword_post' => 10, 'preprocess_comment' => 10, 'comment_form_submit_field' => 10,
@@ -153,6 +155,8 @@ switch ( $name ) {
 			'woocommerce_after_checkout_billing_form' => 10, 'woocommerce_after_checkout_validation' => 10,
 			'gform_form_settings_fields' => 10, 'gform_submit_button' => 10, 'gform_validation' => 9, 'gform_abort_submission_with_confirmation' => 10,
 			'gform_confirmation' => 99, 'gform_pre_submission' => 1, 'gform_validation_message' => 10,
+			'fluentform/render_item_submit_button' => 5, 'fluentform/render_item_step_end' => 5, 'fluentform/validation_errors' => 10,
+			'fluentform/white_listed_fields' => 10, 'fluentform/insert_response_data' => 10,
 		);
 		foreach ( $expect as $hook => $prio ) {
 			check( isset( $t['filters'][ $hook ] ) && array_keys( $t['filters'][ $hook ] ) === array( $prio ), "$hook at priority $prio" );
@@ -167,7 +171,7 @@ switch ( $name ) {
 		check( count( $t['inline_scripts']['infopeak-captcha'] ) === 1, 'one inline script after the widget script' );
 		check( strpos( $js, 'window.ipkcapForms' ) !== false && strpos( $js, 'ipk.resetOn' ) !== false, 'shared helper' );
 		check( strpos( $js, "resetOn('wpcf7submit'" ) !== false && strpos( $js, "resetOn('checkout_error', 'form.checkout'" ) !== false, 'CF7 and WooCommerce listeners' );
-		check( strpos( $js, 'wpformsAjaxSubmit' ) === false && strpos( $js, 'grunion' ) === false && strpos( $js, 'gform' ) === false, 'no listeners for inactive plugins' );
+		check( strpos( $js, 'wpformsAjaxSubmit' ) === false && strpos( $js, 'grunion' ) === false && strpos( $js, 'gform' ) === false && strpos( $js, 'fluentform_' ) === false, 'no listeners for inactive plugins' );
 		check( strpos( $js, 'window.ipkcapForms' ) < strpos( $js, 'wpcf7submit' ), 'helper defined before it is used' );
 		break;
 

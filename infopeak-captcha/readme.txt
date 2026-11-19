@@ -4,7 +4,7 @@ Tags: captcha, spam, privacy, gdpr, login protection
 Requires at least: 5.8
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.3.0
+Stable tag: 1.4.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -35,9 +35,10 @@ Instead of tracking visitors or making them click traffic lights, it uses **proo
 * WPForms forms
 * Jetpack Forms (the contact form built into Jetpack)
 * Gravity Forms forms (turned on form by form)
+* Fluent Forms forms
 * WooCommerce checkout (classic checkout)
 
-Each can be toggled individually on the settings page. The widget is added to your forms automatically, so there is nothing to edit in Contact Form 7, WPForms, Jetpack Forms or WooCommerce. In Gravity Forms you choose which forms to protect, under Form Settings.
+Each can be toggled individually on the settings page. The widget is added to your forms automatically, so there is nothing to edit in Contact Form 7, WPForms, Jetpack Forms, Fluent Forms or WooCommerce. In Gravity Forms you choose which forms to protect, under Form Settings.
 
 **Setup takes two minutes**
 
@@ -121,6 +122,12 @@ Moving from the reCAPTCHA Add-On: turn InfoPeak on for the form, send a test ent
 
 Submissions made with GFAPI::submit_form() to a protected form also need a valid token.
 
+= Does it work with Fluent Forms? =
+
+Yes. Turn it on under Settings → InfoPeak Captcha and the widget appears in every Fluent Forms form, in front of the submit button. The token is checked in Fluent Forms' own validation, before the entry is saved and before any email notification is sent, and a visitor who corrects a mistake can send again without reloading the page. The used token is not stored with the entry.
+
+Conversational forms are not protected: they have no submit button the widget can stand in front of, so they are left as they are.
+
 = Does it work with caching plugins? =
 
 Yes. The widget is plain JavaScript loaded from captcha.infopeak.io and works on fully cached pages.
@@ -147,6 +154,11 @@ Yes - 10,000 verifications per month, free forever. Paid plans start at 100,000 
 6. The widget on the login form - verified automatically, no interaction needed.
 
 == Changelog ==
+
+= 1.4.0 =
+* New: protects Fluent Forms. The widget is added in front of the submit button of every form, and the token is checked in Fluent Forms' own validation, before the entry is saved and before any email is sent. A visitor who corrects a mistake can send again without reloading the page. Turn it off under Settings → InfoPeak Captcha if you prefer.
+* Tested with Fluent Forms 6.2.17: AJAX submissions, two forms on one page, a page served from a page cache, and phone-sized screens. Multi-step forms (Fluent Forms Pro) were not tested.
+* Under the hood: each form plugin's support now lives in its own file and is only loaded when that form plugin is active. Nothing changes on your forms.
 
 = 1.3.0 =
 * New: protects Gravity Forms. Turn it on form by form under Form Settings, InfoPeak Captcha. Forms you have not turned it on for are not changed, so you can move one form at a time from another captcha. If a form is in another language than its page, choose the captcha language there, and the widget and its error messages use that language.
@@ -179,6 +191,9 @@ Yes - 10,000 verifications per month, free forever. Paid plans start at 100,000 
 * Initial release: login, registration, lost-password and comment protection.
 
 == Upgrade Notice ==
+
+= 1.4.0 =
+Adds protection for Fluent Forms. Turned on automatically when Fluent Forms is installed.
 
 = 1.3.0 =
 Adds protection for Gravity Forms, turned on form by form. Nothing changes on your forms until you turn it on.

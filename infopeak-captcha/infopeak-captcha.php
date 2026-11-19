@@ -2,8 +2,8 @@
 /**
  * Plugin Name:       InfoPeak Captcha
  * Plugin URI:        https://infopeak.io/products/captcha
- * Description:       Privacy-first, EU-hosted captcha for WordPress. No tracking, no cookies, no image puzzles - protects login, registration, password reset, comments, Contact Form 7, WPForms, Jetpack Forms, Gravity Forms and WooCommerce checkout.
- * Version:           1.3.0
+ * Description:       Privacy-first, EU-hosted captcha for WordPress. No tracking, no cookies, no image puzzles - protects login, registration, password reset, comments, Contact Form 7, WPForms, Jetpack Forms, Gravity Forms, Fluent Forms and WooCommerce checkout.
+ * Version:           1.4.0
  * Requires at least: 5.8
  * Requires PHP:      7.4
  * Author:            InfoPeak
@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'IPKCAP_VERSION', '1.3.0' );
+define( 'IPKCAP_VERSION', '1.4.0' );
 define( 'IPKCAP_API_ORIGIN', 'https://captcha.infopeak.io' );
 define( 'IPKCAP_FIELD', 'infopeak-captcha-response' );
 
@@ -54,6 +54,7 @@ function ipkcap_get_settings() {
 		'enable_woo'       => 1,
 		// Gravity Forms is also switched on per form (Form Settings), so nothing changes until an admin does that.
 		'enable_gf'        => 1,
+		'enable_fluent'    => 1,
 	);
 	$saved = get_option( 'ipkcap_settings', array() );
 	return wp_parse_args( is_array( $saved ) ? $saved : array(), $defaults );
@@ -241,8 +242,9 @@ function ipkcap_add_form_script( $js ) {
 //                                             wrapper), or for every widget when el has none
 //   ipkcapForms.resetOn(events, form, opts)   the same after the form plugin's own events:
 //                                             events  space-separated event names
-//                                             form    CSS selector of the form, or null for
-//                                                     the element the event fires on
+//                                             form    CSS selector of the form, null for the
+//                                                     element the event fires on, or a function
+//                                                     (event, ...jQuery arguments) returning it
 //                                             opts    { jquery: true } for jQuery events,
 //                                                     { on: element } to listen there instead
 //                                                     of on document
@@ -268,7 +270,8 @@ function ipkcap_enqueue_for_forms( $with_script = true ) {
 		var on = opts.on || document;
 		var handler = function (e) {
 			var el = e ? e.target : null;
-			if (form) el = (el && el.closest && el.closest(form)) || document.querySelector(form);
+			if (typeof form === 'function') el = form.apply(this, arguments);
+			else if (form) el = (el && el.closest && el.closest(form)) || document.querySelector(form);
 			ipk.reset(el);
 		};
 		if (opts.jquery) {
@@ -328,6 +331,12 @@ function ipkcap_integrations() {
 			'plugin'  => 'gravityforms.php',
 			'present' => function () {
 				return class_exists( 'GFForms', false );
+			},
+		),
+		'fluent-forms'   => array(
+			'plugin'  => 'fluentform.php',
+			'present' => function () {
+				return defined( 'FLUENTFORM_VERSION' );
 			},
 		),
 	);
@@ -404,6 +413,7 @@ function ipkcap_sanitize_settings( $input ) {
 		'enable_jetpack'  => empty( $input['enable_jetpack'] ) ? 0 : 1,
 		'enable_woo'      => empty( $input['enable_woo'] ) ? 0 : 1,
 		'enable_gf'       => empty( $input['enable_gf'] ) ? 0 : 1,
+		'enable_fluent'   => empty( $input['enable_fluent'] ) ? 0 : 1,
 	);
 }
 
@@ -496,6 +506,7 @@ function ipkcap_render_settings_page() {
 								'enable_jetpack' => array( __( 'Jetpack Forms', 'infopeak-captcha' ), defined( 'JETPACK__VERSION' ) ),
 								'enable_woo'     => array( __( 'WooCommerce checkout', 'infopeak-captcha' ), class_exists( 'WooCommerce' ) ),
 								'enable_gf'      => array( __( 'Gravity Forms', 'infopeak-captcha' ), class_exists( 'GFForms' ) ),
+								'enable_fluent'  => array( __( 'Fluent Forms', 'infopeak-captcha' ), defined( 'FLUENTFORM_VERSION' ) ),
 							);
 							foreach ( $ipkcap_plugins as $ipkcap_key => $ipkcap_plugin ) :
 								?>
