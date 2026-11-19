@@ -213,130 +213,11 @@ function ipkcap_translate_for( $text, $lang ) {
 }
 
 /* -------------------------------------------------------------------------
- * Login, registration and lost-password forms (wp-login.php)
- * ---------------------------------------------------------------------- */
-
-add_action( 'login_enqueue_scripts', function () {
-	if ( ! ipkcap_is_configured() ) {
-		return;
-	}
-	$s = ipkcap_get_settings();
-	if ( $s['enable_login'] || $s['enable_register'] || $s['enable_lostpw'] ) {
-		ipkcap_enqueue_script();
-	}
-} );
-
-add_action( 'login_form', function () {
-	$s = ipkcap_get_settings();
-	if ( ipkcap_is_configured() && $s['enable_login'] ) {
-		ipkcap_print_widget();
-	}
-} );
-
-add_action( 'register_form', function () {
-	$s = ipkcap_get_settings();
-	if ( ipkcap_is_configured() && $s['enable_register'] ) {
-		ipkcap_print_widget();
-	}
-} );
-
-add_action( 'lostpassword_form', function () {
-	$s = ipkcap_get_settings();
-	if ( ipkcap_is_configured() && $s['enable_lostpw'] ) {
-		ipkcap_print_widget();
-	}
-} );
-
-// Login check. Priority 30 runs after the username/password handlers.
-add_filter( 'authenticate', function ( $user ) {
-	$s = ipkcap_get_settings();
-	if ( ! ipkcap_is_configured() || ! $s['enable_login'] ) {
-		return $user;
-	}
-	// Only enforce on an actual interactive login POST, never for cookies, XML-RPC or REST.
-	if ( ! isset( $_POST['log'], $_POST['pwd'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
-		return $user;
-	}
-	if ( ! ipkcap_posted_token_valid() ) {
-		return new WP_Error( 'ipkcap_failed', ipkcap_error_message() );
-	}
-	return $user;
-}, 30 );
-
-// Registration check.
-add_filter( 'registration_errors', function ( $errors ) {
-	$s = ipkcap_get_settings();
-	if ( ipkcap_is_configured() && $s['enable_register'] && ! ipkcap_posted_token_valid() ) {
-		$errors->add( 'ipkcap_failed', ipkcap_error_message() );
-	}
-	return $errors;
-} );
-
-// Lost-password check.
-add_action( 'lostpassword_post', function ( $errors ) {
-	$s = ipkcap_get_settings();
-	if ( ipkcap_is_configured() && $s['enable_lostpw'] && ! ipkcap_posted_token_valid() ) {
-		$errors->add( 'ipkcap_failed', ipkcap_error_message() );
-	}
-} );
-
-/* -------------------------------------------------------------------------
- * Comments
- * ---------------------------------------------------------------------- */
-
-function ipkcap_comments_active() {
-	$s = ipkcap_get_settings();
-	if ( ! ipkcap_is_configured() || ! $s['enable_comments'] ) {
-		return false;
-	}
-	if ( $s['skip_logged_in'] && is_user_logged_in() ) {
-		return false;
-	}
-	return true;
-}
-
-add_action( 'wp_enqueue_scripts', function () {
-	if ( ipkcap_comments_active() && ( is_singular() && comments_open() ) ) {
-		ipkcap_enqueue_script();
-	}
-} );
-
-add_filter( 'comment_form_submit_field', function ( $submit_field ) {
-	if ( ! ipkcap_comments_active() ) {
-		return $submit_field;
-	}
-	return ipkcap_widget_html() . $submit_field;
-} );
-
-add_filter( 'preprocess_comment', function ( $commentdata ) {
-	// Pingbacks and trackbacks carry no captcha token.
-	$type = isset( $commentdata['comment_type'] ) ? $commentdata['comment_type'] : '';
-	if ( in_array( $type, array( 'pingback', 'trackback' ), true ) ) {
-		return $commentdata;
-	}
-	$s = ipkcap_get_settings();
-	if ( ! ipkcap_is_configured() || ! $s['enable_comments'] ) {
-		return $commentdata;
-	}
-	if ( $s['skip_logged_in'] && is_user_logged_in() ) {
-		return $commentdata;
-	}
-	if ( ! ipkcap_posted_token_valid() ) {
-		wp_die(
-			esc_html( ipkcap_error_message() ),
-			esc_html__( 'Comment blocked', 'infopeak-captcha' ),
-			array( 'response' => 400, 'back_link' => true )
-		);
-	}
-	return $commentdata;
-} );
-
-/* -------------------------------------------------------------------------
- * Form plugins: Contact Form 7, WPForms, Jetpack Forms, WooCommerce checkout
+ * Form plugins (includes/integrations/)
  *
- * All three submit with JavaScript and keep the visitor on the page. A token
- * can only be verified once, so after every submit the widget is asked for a
- * fresh one (infopeakCaptcha.reset), otherwise the next attempt would fail.
+ * Most form plugins submit with JavaScript and keep the visitor on the page. A
+ * token can only be verified once, so after every submit the widget is asked for
+ * a fresh one (infopeakCaptcha.reset), otherwise the next attempt would fail.
  * ---------------------------------------------------------------------- */
 
 function ipkcap_integration_active( $key ) {
@@ -344,10 +225,27 @@ function ipkcap_integration_active( $key ) {
 	return ipkcap_is_configured() && ! empty( $s[ $key ] );
 }
 
+// JavaScript an integration adds to the listener below, for its form plugin's own
+// submit events. Integrations call it when their file is loaded.
+function ipkcap_add_form_script( $js ) {
+	$GLOBALS['ipkcap_form_scripts'][] = $js;
+}
+
 // Load the widget script plus a small listener that resets the widget after
 // the form plugin's own AJAX submit. Called while the form is rendered.
 // With $with_script = false only the listener is added, for forms where the
 // widget script is already on the page (for example pasted in by hand).
+//
+// The listener starts with ipkcapForms, which the integrations' scripts use:
+//   ipkcapForms.reset(el)                     a fresh token for the widget in el (a form or a
+//                                             wrapper), or for every widget when el has none
+//   ipkcapForms.resetOn(events, form, opts)   the same after the form plugin's own events:
+//                                             events  space-separated event names
+//                                             form    CSS selector of the form, or null for
+//                                                     the element the event fires on
+//                                             opts    { jquery: true } for jQuery events,
+//                                                     { on: element } to listen there instead
+//                                                     of on document
 function ipkcap_enqueue_for_forms( $with_script = true ) {
 	if ( $with_script ) {
 		ipkcap_enqueue_script();
@@ -357,93 +255,31 @@ function ipkcap_enqueue_for_forms( $with_script = true ) {
 		return;
 	}
 	$done = true;
-	$js = <<<'JS'
+	$js   = <<<'JS'
 (function () {
-	function reset(el) {
+	var ipk = window.ipkcapForms = window.ipkcapForms || {};
+	ipk.reset = function (el) {
 		if (!window.infopeakCaptcha || !el) return;
 		var w = el.querySelector ? el.querySelector('.infopeak-captcha') : null;
 		window.infopeakCaptcha.reset(w || undefined);
-	}
-	// Contact Form 7 fires this on the form after every submit, sent or not.
-	document.addEventListener('wpcf7submit', function (e) { reset(e.target); });
-	if (window.jQuery) {
-		// WPForms (AJAX forms) and the WooCommerce classic checkout.
-		jQuery(document).on('wpformsAjaxSubmitFailed wpformsAjaxSubmitSuccess', function (e) { reset(e.target); });
-		jQuery(document.body).on('checkout_error', function () { reset(document.querySelector('form.checkout')); });
-	}
-	// Jetpack Forms submit with fetch() and fire no event of their own. Remember
-	// which form was sent and ask for a fresh token once that request settles.
-	var jpForm = null, jpTimer = null, nativeFetch = window.fetch;
-	if (nativeFetch) {
-		document.addEventListener('submit', function (e) {
-			var f = e.target;
-			if (!f || !f.querySelector || !f.querySelector('input[name="action"][value="grunion-contact-form"]') || !f.querySelector('.infopeak-captcha')) return;
-			jpForm = f;
-			clearTimeout(jpTimer);
-			jpTimer = setTimeout(function () { jpForm = null; }, 5000);
-		}, true);
-		window.fetch = function () {
-			var p = nativeFetch.apply(this, arguments), f = jpForm;
-			if (f) {
-				jpForm = null;
-				var done = function () { reset(f); };
-				p.then(done, done);
-			}
-			return p;
+	};
+	ipk.resetOn = function (events, form, opts) {
+		opts = opts || {};
+		var on = opts.on || document;
+		var handler = function (e) {
+			var el = e ? e.target : null;
+			if (form) el = (el && el.closest && el.closest(form)) || document.querySelector(form);
+			ipk.reset(el);
 		};
-	}
-	// Gravity Forms. With AJAX the form markup is drawn again after a failed submit
-	// or a page change, and a widget in new markup has not been started. Running the
-	// loader again starts it: the loader only sets up widgets it has not seen before.
-	var gfLoader = null;
-	function gfStart(id) {
-		var f = document.getElementById('gform_' + id), w = f && f.querySelector('.infopeak-captcha');
-		var tag = document.getElementById('infopeak-captcha-js');
-		if (!w || w.classList.contains('ipk-cap') || gfLoader || !tag || !tag.src) return;
-		gfLoader = document.createElement('script');
-		gfLoader.src = tag.src;
-		gfLoader.onload = gfLoader.onerror = function () { gfLoader.remove(); gfLoader = null; };
-		document.body.appendChild(gfLoader);
-	}
-	if (window.jQuery) {
-		jQuery(document).on('gform_post_render', function (e, id) { gfStart(id); });
-	}
-	document.addEventListener('gform/post_render', function (e) { if (e.detail) gfStart(e.detail.formId); });
-	var gfHooked = false;
-	function gfHooks() {
-		var u = window.gform && window.gform.utils;
-		if (gfHooked || !u || !u.addAsyncFilter) return;
-		gfHooked = true;
-		// Hold the submit until the widget has a token, so a quick click is not refused.
-		u.addAsyncFilter('gform/submission/pre_submission', function (data) {
-			var f = data && data.form, w = f && f.querySelector && f.querySelector('.infopeak-captcha');
-			// A widget that never started (script blocked) cannot deliver a token; the server says so.
-			if (!w || !window.infopeakCaptcha || !w.classList.contains('ipk-cap') || data.submissionType !== 'submit') return data;
-			var token = function () { var i = f.querySelector('input[name="infopeak-captcha-response"]'); return i && i.value; };
-			if (token()) return data;
-			if (!w.classList.contains('is-solving')) window.infopeakCaptcha.reset(w);
-			return new Promise(function (resolve) {
-				var waited = 0, timer = setInterval(function () {
-					waited += 200;
-					if (token() || waited >= 20000) { clearInterval(timer); resolve(data); }
-				}, 200);
-			});
-		});
-		// The token is used up by the submit. A widget still on the page needs a new one;
-		// one that was replaced with new markup is started by gfStart instead.
-		u.addAsyncFilter('gform/ajax/post_ajax_submission', function (data) {
-			var f = data && data.form;
-			if (f && !f.querySelector) f = document.getElementById('gform_' + f.id);
-			var w = f && f.querySelector('.infopeak-captcha');
-			setTimeout(function () { if (window.infopeakCaptcha && w && w.isConnected && w.classList.contains('ipk-cap')) window.infopeakCaptcha.reset(w); }, 0);
-			return data;
-		});
-	}
-	gfHooks();
-	document.addEventListener('gform/theme/scripts_loaded', gfHooks);
-	document.addEventListener('DOMContentLoaded', gfHooks);
+		if (opts.jquery) {
+			if (window.jQuery) jQuery(on).on(events, handler);
+			return;
+		}
+		events.split(' ').forEach(function (name) { on.addEventListener(name, handler); });
+	};
 })();
 JS;
+	$js  .= "\n" . implode( "\n", isset( $GLOBALS['ipkcap_form_scripts'] ) ? (array) $GLOBALS['ipkcap_form_scripts'] : array() );
 	if ( ! $with_script ) {
 		// A handle without a file carries the listener on its own.
 		wp_register_script( 'infopeak-captcha-reset', false, array(), IPKCAP_VERSION, true );
@@ -454,266 +290,86 @@ JS;
 	wp_add_inline_script( 'infopeak-captcha', $js, 'after' );
 }
 
-// --- Contact Form 7 ---
+/* -------------------------------------------------------------------------
+ * Loading the integrations
+ * ---------------------------------------------------------------------- */
 
-// Add the widget in front of the submit button, unless the form already
-// places it itself with the [infopeak_captcha] tag.
-add_filter( 'wpcf7_form_elements', function ( $html ) {
-	if ( ! ipkcap_integration_active( 'enable_cf7' ) ) {
-		return $html;
-	}
-	ipkcap_enqueue_for_forms();
-	if ( strpos( $html, 'infopeak-captcha' ) !== false ) {
-		return $html;
-	}
-	$widget = ipkcap_widget_html();
-	$count  = 0;
-	$html   = preg_replace( '/(<(?:input[^>]+type="submit"|button[^>]+type="submit")[^>]*>)/i', $widget . '$1', $html, 1, $count );
-	return $count ? $html : $html . $widget;
-} );
-
-add_action( 'wpcf7_init', function () {
-	if ( function_exists( 'wpcf7_add_form_tag' ) ) {
-		wpcf7_add_form_tag( 'infopeak_captcha', function () {
-			return ipkcap_integration_active( 'enable_cf7' ) ? ipkcap_widget_html() : '';
-		} );
-	}
-} );
-
-// Contact Form 7's own spam check. Returning true marks the submission as spam.
-add_filter( 'wpcf7_spam', function ( $spam ) {
-	if ( $spam || ! ipkcap_integration_active( 'enable_cf7' ) ) {
-		return $spam;
-	}
-	return ! ipkcap_posted_token_valid();
-} );
-
-// Contact Form 7 shows its generic spam message; use the clearer one when the quota is the reason.
-add_filter( 'wpcf7_display_message', function ( $message, $status ) {
-	if ( 'spam' === $status && ! empty( $GLOBALS['ipkcap_quota_exceeded'] ) ) {
-		return ipkcap_error_message();
-	}
-	return $message;
-}, 10, 2 );
-
-// --- WPForms ---
-
-add_action( 'wpforms_display_submit_before', function () {
-	if ( ! ipkcap_integration_active( 'enable_wpforms' ) ) {
-		return;
-	}
-	ipkcap_enqueue_for_forms();
-	ipkcap_print_widget();
-} );
-
-add_action( 'wpforms_process_before', function ( $entry, $form_data ) {
-	if ( ! ipkcap_integration_active( 'enable_wpforms' ) || ipkcap_posted_token_valid() ) {
-		return;
-	}
-	$process = function_exists( 'wpforms' ) ? ( method_exists( wpforms(), 'get' ) ? wpforms()->get( 'process' ) : wpforms()->process ) : null;
-	if ( $process && isset( $form_data['id'] ) ) {
-		$process->errors[ $form_data['id'] ]['header'] = ipkcap_error_message();
-	}
-}, 10, 2 );
-
-// --- Jetpack Forms ---
-
-// Add the widget in front of the submit button, unless the form already has it
-// (for example pasted in by hand), in which case it is left alone.
-add_filter( 'jetpack_contact_form_html', function ( $html ) {
-	if ( ! ipkcap_integration_active( 'enable_jetpack' ) ) {
-		return $html;
-	}
-	if ( strpos( $html, 'infopeak-captcha' ) !== false ) {
-		ipkcap_enqueue_for_forms( false );
-		return $html;
-	}
-	ipkcap_enqueue_for_forms();
-	$widget = ipkcap_widget_html();
-	$count  = 0;
-	// Jetpack's newer form block has the submit button as an inner block, the classic form builds <p class='contact-submit'>.
-	foreach ( array( '/(<div class="wp-block-button)/', "/(<p class='contact-submit'>)/", '/(<\/form>)/i' ) as $pattern ) {
-		$html = preg_replace( $pattern, $widget . '$1', $html, 1, $count );
-		if ( $count ) {
-			break;
-		}
-	}
-	return $html;
-} );
-
-// Jetpack aborts the submission and shows the message when a WP_Error is returned.
-add_filter( 'jetpack_contact_form_is_spam', function ( $is_spam ) {
-	if ( ! ipkcap_integration_active( 'enable_jetpack' ) || is_wp_error( $is_spam ) ) {
-		return $is_spam;
-	}
-	if ( ! ipkcap_posted_token_valid() ) {
-		return new WP_Error( 'ipkcap_failed', ipkcap_error_message() );
-	}
-	return $is_spam;
-} );
-
-// --- WooCommerce checkout (classic checkout) ---
-
-// Placed after the billing fields: WooCommerce reloads the order review and
-// payment area with AJAX, which would leave a fresh, unstarted widget there.
-add_action( 'woocommerce_after_checkout_billing_form', function () {
-	if ( ! ipkcap_integration_active( 'enable_woo' ) ) {
-		return;
-	}
-	ipkcap_enqueue_for_forms();
-	ipkcap_print_widget();
-} );
-
-add_action( 'woocommerce_after_checkout_validation', function ( $data, $errors ) {
-	if ( ipkcap_integration_active( 'enable_woo' ) && ! ipkcap_posted_token_valid() ) {
-		$errors->add( 'ipkcap_failed', ipkcap_error_message() );
-	}
-}, 10, 2 );
-
-// --- Gravity Forms ---
-//
-// Off for every form until an admin turns it on under Form Settings, so a site can
-// move one form at a time from another captcha. The hooks below only run when
-// Gravity Forms is active.
-
-function ipkcap_gf_active( $form ) {
-	return ipkcap_integration_active( 'enable_gf' ) && is_array( $form ) && ! empty( $form['ipkcap_enabled'] );
-}
-
-// The language chosen for the form under Form Settings, or '' for the page's.
-function ipkcap_gf_lang( $form ) {
-	return isset( $form['ipkcap_lang'] ) ? (string) $form['ipkcap_lang'] : '';
-}
-
-add_filter( 'gform_form_settings_fields', function ( $fields, $form ) {
-	if ( ! ipkcap_integration_active( 'enable_gf' ) ) {
-		return $fields;
-	}
-	$choices = array( array( 'label' => __( 'The page\'s language', 'infopeak-captcha' ), 'value' => '' ) );
-	foreach ( ipkcap_languages() as $code => $name ) {
-		$choices[] = array( 'label' => $name, 'value' => $code );
-	}
-	$fields['ipkcap'] = array(
-		'title'  => __( 'InfoPeak Captcha', 'infopeak-captcha' ),
-		'fields' => array(
-			array(
-				'name'  => 'ipkcap_enabled',
-				'type'  => 'toggle',
-				'label' => __( 'Protect this form with InfoPeak Captcha', 'infopeak-captcha' ),
-			),
-			array(
-				'name'          => 'ipkcap_lang',
-				'type'          => 'select',
-				'label'         => __( 'Captcha language', 'infopeak-captcha' ),
-				'description'   => __( 'Only needed when the form is in another language than the page it is on.', 'infopeak-captcha' ),
-				'choices'       => $choices,
-				'default_value' => '',
-			),
+// The form plugin integrations in includes/integrations/, by file name. 'plugin' is the
+// form plugin's main file as it appears in the list of active plugins; 'present' says
+// whether the form plugin has loaded, for installs where it is not in that list (a
+// must-use plugin, a renamed main file, a host that bundles it).
+function ipkcap_integrations() {
+	return array(
+		'contact-form-7' => array(
+			'plugin'  => 'wp-contact-form-7.php',
+			'present' => function () {
+				return defined( 'WPCF7_VERSION' );
+			},
+		),
+		'wpforms'        => array(
+			'plugin'  => 'wpforms.php',
+			'present' => function () {
+				return defined( 'WPFORMS_VERSION' ) || function_exists( 'wpforms' );
+			},
+		),
+		'jetpack'        => array(
+			'plugin'  => 'jetpack.php',
+			'present' => function () {
+				return defined( 'JETPACK__VERSION' ) || class_exists( 'Automattic\Jetpack\Forms\Jetpack_Forms', false ) || class_exists( 'Grunion_Contact_Form_Plugin', false );
+			},
+		),
+		'woocommerce'    => array(
+			'plugin'  => 'woocommerce.php',
+			'present' => function () {
+				return class_exists( 'WooCommerce', false );
+			},
+		),
+		'gravity-forms'  => array(
+			'plugin'  => 'gravityforms.php',
+			'present' => function () {
+				return class_exists( 'GFForms', false );
+			},
 		),
 	);
-	return $fields;
-}, 10, 2 );
+}
 
-// The widget goes in front of the submit button, which on a multi-page form is on
-// the last page. A form that already has the widget in an HTML field keeps that one.
-add_filter( 'gform_submit_button', function ( $button, $form ) {
-	if ( ! ipkcap_gf_active( $form ) ) {
-		return $button;
+function ipkcap_load_integration( $name ) {
+	static $loaded = array();
+	if ( empty( $loaded[ $name ] ) ) {
+		$loaded[ $name ] = true;
+		require_once __DIR__ . '/includes/integrations/' . $name . '.php';
 	}
-	ipkcap_enqueue_for_forms();
-	foreach ( (array) rgar( $form, 'fields' ) as $field ) {
-		if ( isset( $field->content ) && is_string( $field->content ) && strpos( $field->content, 'infopeak-captcha' ) !== false ) {
-			return $button;
+}
+
+// $late: false while this file loads, true once every plugin has loaded.
+function ipkcap_load_integrations( $late = false ) {
+	$active = array();
+	if ( ! $late ) {
+		$active = (array) get_option( 'active_plugins', array() );
+		if ( is_multisite() ) {
+			$active = array_merge( $active, array_keys( (array) get_site_option( 'active_sitewide_plugins', array() ) ) );
+		}
+		$active = array_map( 'basename', array_map( 'strval', $active ) );
+	}
+	foreach ( ipkcap_integrations() as $name => $integration ) {
+		if ( in_array( $integration['plugin'], $active, true ) || call_user_func( $integration['present'] ) ) {
+			ipkcap_load_integration( $name );
 		}
 	}
-	return ipkcap_widget_html( ipkcap_gf_lang( $form ) ) . $button;
-}, 10, 2 );
+}
 
-// Runs in Gravity Forms' own validation, before the entry is saved and before any
-// notification or add-on feed (payment add-ons validate at a later priority).
-add_filter( 'gform_validation', function ( $result, $context = 'form-submit' ) {
-	$form = isset( $result['form'] ) ? $result['form'] : null;
-	// api-validate only checks the values and saves nothing.
-	if ( ! ipkcap_gf_active( $form ) || 'api-validate' === $context ) {
-		return $result;
-	}
-	// Moving between pages saves nothing; the token is checked when the form is sent.
-	// Gravity Forms decides that the same way, including pages hidden by conditional logic.
-	if ( is_callable( array( 'GFFormDisplay', 'is_last_page' ) ) && ! GFFormDisplay::is_last_page( $form ) ) {
-		return $result;
-	}
-	// Another field already failed, so nothing is saved: keep the token unspent and
-	// the quota untouched. The visitor gets a fresh token for the next attempt.
-	if ( empty( $result['is_valid'] ) ) {
-		return $result;
-	}
-	// A token can be confirmed once. Should Gravity Forms validate twice in the same
-	// request, the first answer stands; it is never kept beyond this request.
-	if ( ! empty( $GLOBALS['ipkcap_gf_passed'][ (int) $form['id'] ] ) ) {
-		return $result;
-	}
-	if ( ipkcap_posted_token_valid() ) {
-		$GLOBALS['ipkcap_gf_passed'][ (int) $form['id'] ] = true;
-	} else {
-		$result['is_valid'] = false;
-		$GLOBALS['ipkcap_gf_failed'][ (int) $form['id'] ] = ipkcap_error_message( ipkcap_gf_lang( $form ) );
-	}
-	return $result;
-}, 9, 2 );
-
-// Second check, after validation and before the entry is stored and notifications go
-// out. Gravity Forms (2.7 and later) runs this filter for every final submission,
-// including GFAPI::submit_form(), whatever the page fields say, and
-// never when moving between pages. Normally the token was already confirmed above;
-// if that check was skipped for any reason, it is done now. A refused submission ends
-// with Gravity Forms' own confirmation response, which here carries the error, so it
-// also shows in AJAX forms. Save and Continue only stores a draft and is left alone.
-add_filter( 'gform_abort_submission_with_confirmation', function ( $abort, $form ) {
-	if ( $abort || ! ipkcap_gf_active( $form ) || ! empty( $_POST['gform_save'] ) || ! empty( $GLOBALS['ipkcap_gf_passed'][ (int) $form['id'] ] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Gravity Forms' own flag.
-		return $abort;
-	}
-	if ( ipkcap_posted_token_valid() ) {
-		$GLOBALS['ipkcap_gf_passed'][ (int) $form['id'] ] = true;
-		return $abort;
-	}
-	$GLOBALS['ipkcap_gf_refused'][ (int) $form['id'] ] = ipkcap_error_message( ipkcap_gf_lang( $form ) );
-	return true;
-}, 10, 2 );
-
-add_filter( 'gform_confirmation', function ( $confirmation, $form ) {
-	$id = isset( $form['id'] ) ? (int) $form['id'] : 0;
-	if ( empty( $GLOBALS['ipkcap_gf_refused'][ $id ] ) ) {
-		return $confirmation;
-	}
-	return '<div id="gform_confirmation_wrapper_' . $id . '" class="gform_confirmation_wrapper"><div id="gform_confirmation_message_' . $id . '" class="gform_confirmation_message ipkcap-gf-error" role="alert">'
-		. esc_html( $GLOBALS['ipkcap_gf_refused'][ $id ] ) . '</div></div>';
-}, 99, 2 );
-
-// Last line of defence for Gravity Forms versions without the filter above: right
-// before the entry is stored, an unconfirmed submission stops.
-add_action( 'gform_pre_submission', function ( $form ) {
-	if ( ! ipkcap_gf_active( $form ) || ! empty( $GLOBALS['ipkcap_gf_passed'][ (int) $form['id'] ] ) ) {
-		return;
-	}
-	if ( ipkcap_posted_token_valid() ) {
-		$GLOBALS['ipkcap_gf_passed'][ (int) $form['id'] ] = true;
-		return;
-	}
-	wp_die(
-		esc_html( ipkcap_error_message( ipkcap_gf_lang( $form ) ) ),
-		esc_html( ipkcap_is_other_language( ipkcap_gf_lang( $form ) ) ? ipkcap_translate_for( 'Form not sent', ipkcap_gf_lang( $form ) ) : __( 'Form not sent', 'infopeak-captcha' ) ),
-		array( 'response' => 400, 'back_link' => true )
-	);
-}, 1 );
-
-// No field is at fault, so the reason goes under the form's own error summary.
-add_filter( 'gform_validation_message', function ( $message, $form ) {
-	$id = isset( $form['id'] ) ? (int) $form['id'] : 0;
-	if ( empty( $GLOBALS['ipkcap_gf_failed'][ $id ] ) ) {
-		return $message;
-	}
-	return $message . '<p class="ipkcap-gf-error" role="alert">' . esc_html( $GLOBALS['ipkcap_gf_failed'][ $id ] ) . '</p>';
-}, 10, 2 );
+// WordPress' own forms are always protected. A form plugin's integration is loaded right
+// away when the plugin is active, so its hooks are added at the same point as before, or
+// once all plugins have loaded when the form plugin only turns up then.
+ipkcap_load_integration( 'core' );
+ipkcap_load_integrations();
+if ( did_action( 'plugins_loaded' ) ) {
+	ipkcap_load_integrations( true );
+} else {
+	add_action( 'plugins_loaded', function () {
+		ipkcap_load_integrations( true );
+	}, 0 );
+}
 
 /* -------------------------------------------------------------------------
  * Admin: settings page

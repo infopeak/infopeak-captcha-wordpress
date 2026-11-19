@@ -1,2 +1,4 @@
 # Compiled translations are binary.
 *.mo binary
+# Shell scripts run in Git Bash and on Linux.
+*.sh text eol=lf
