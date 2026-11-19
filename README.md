@@ -39,14 +39,20 @@ GPL-2.0-or-later. See [readme.txt](infopeak-captcha/readme.txt).
 
 ## Tests
 
-Gravity Forms integration (synthetic data, no live site):
+Every integration runs the same browser checks against a throwaway WordPress with the real form plugins: see [tests/integrations/README.md](tests/integrations/README.md).
 
 ```bash
-php tests/gravity-forms/unit.php
+PLAYWRIGHT_CORE=<path to playwright-core> CHROMIUM=<path to chrome> node tests/integrations/run.mjs
+```
+
+Gravity Forms has no licence for automated runs. Its server-side tests run without a site, and its browser checks use a stand-in for Gravity Forms' submission scripts (synthetic data, no live site):
+
+```bash
+php tests/integrations/gravity-forms/unit.php
 ```
 
 ```bash
-PLAYWRIGHT_CORE=<path to playwright-core> CHROMIUM=<path to chrome> node tests/gravity-forms/browser.mjs
+PLAYWRIGHT_CORE=<path to playwright-core> CHROMIUM=<path to chrome> node tests/integrations/gravity-forms/browser.mjs
 ```
 
-The browser test uses the real widget and the public test credentials, and stands in for Gravity Forms' submission scripts. It does not replace a run against a licensed Gravity Forms install.
+The stand-in does not replace a run against a licensed Gravity Forms install.

@@ -6,6 +6,7 @@
  * forwards to captcha.infopeak.io with the public test credentials.
  *
  * Forms: 2 = protected, page language; 5 = protected, English; 7 = not protected.
+ * ?form=2 shows one form, ?form=2,5 several on the same page.
  * ?mode=ajax-replace (markup redrawn after a failed submit, like the iframe method),
  * ajax-keep (markup kept, like the newer AJAX method) or postback.
  */
@@ -26,14 +27,17 @@ $t['http_response'] = function ( $url, $args ) {
 	preg_match( '/\s(\d{3})\s/', $http_response_header[0], $m );
 	return array( 'response' => array( 'code' => (int) $m[1] ), 'body' => $body );
 };
-require dirname( __DIR__, 3 ) . '/infopeak-captcha/infopeak-captcha.php';
+require dirname( __DIR__, 4 ) . '/infopeak-captcha/infopeak-captcha.php';
 
 $forms = array(
 	2 => ipk_test_form( 2, array( 'ipkcap_enabled' => '1' ) ),
 	5 => ipk_test_form( 5, array( 'ipkcap_enabled' => '1', 'ipkcap_lang' => 'en' ) ),
 	7 => ipk_test_form( 7 ),
 );
-$id   = isset( $_GET['form'] ) && isset( $forms[ (int) $_GET['form'] ] ) ? (int) $_GET['form'] : 2;
+$ids  = array_values( array_intersect( array_map( 'intval', explode( ',', isset( $_GET['form'] ) ? (string) $_GET['form'] : '2' ) ), array_keys( $forms ) ) );
+$ids  = $ids ? $ids : array( 2 );
+// The form a submission is for: ?sent= on a postback, otherwise the first (or only) one.
+$id   = isset( $_GET['sent'] ) && in_array( (int) $_GET['sent'], $ids, true ) ? (int) $_GET['sent'] : $ids[0];
 $form = $forms[ $id ];
 $mode = isset( $_GET['mode'] ) ? preg_replace( '/[^a-z-]/', '', $_GET['mode'] ) : 'ajax-replace';
 $log  = getenv( 'ENTRY_LOG' );
@@ -49,9 +53,10 @@ function ipk_site_submit( $form, $log ) {
 
 function ipk_site_form( $form, $mode, $message = '' ) {
 	$id     = (int) $form['id'];
+	$all    = implode( ',', $GLOBALS['ids'] );
 	$button = apply_filters( 'gform_submit_button', '<button type="submit" class="gform_button button" id="gform_submit_button_' . $id . '">Send</button>', $form );
 	return '<div class="gform_validation_errors">' . $message . '</div>'
-		. '<form id="gform_' . $id . '" method="post" enctype="multipart/form-data" action="/?form=' . $id . '&mode=' . $mode . '">'
+		. '<form id="gform_' . $id . '" method="post" enctype="multipart/form-data" action="/?form=' . $all . '&mode=' . $mode . '&sent=' . $id . '">'
 		. '<label>Name <input name="input_1" id="input_' . $id . '_1"></label>'
 		. '<label>File <input type="file" name="input_3" id="input_' . $id . '_3"></label>'
 		. '<input type="hidden" name="gform_target_page_number_' . $id . '" value="0">'
@@ -67,18 +72,22 @@ if ( '/submit' === $path ) {
 	return true;
 }
 
-$inner = '';
-if ( 'POST' === $_SERVER['REQUEST_METHOD'] ) {
-	$r     = ipk_site_submit( $form, $log );
-	$inner = $r['saved'] ? '<div class="gform_confirmation_message">Thanks</div>' : ipk_site_form( $form, $mode, $r['message'] );
-} else {
-	$inner = ipk_site_form( $form, $mode );
+$inner = array();
+foreach ( $ids as $one ) {
+	if ( 'POST' === $_SERVER['REQUEST_METHOD'] && $one === $id ) {
+		$r             = ipk_site_submit( $form, $log );
+		$inner[ $one ] = $r['saved'] ? '<div class="gform_confirmation_message">Thanks</div>' : ipk_site_form( $form, $mode, $r['message'] );
+	} else {
+		$inner[ $one ] = ipk_site_form( $forms[ $one ], $mode );
+	}
 }
 ?><!doctype html>
 <html lang="da-DK">
 <head><meta charset="utf-8"><title>GF test</title></head>
 <body>
-<div class="gform_wrapper" id="gform_wrapper_<?php echo (int) $id; ?>"><?php echo $inner; // phpcs:ignore ?></div>
+<?php foreach ( $inner as $one => $html ) : ?>
+<div class="gform_wrapper" id="gform_wrapper_<?php echo (int) $one; ?>"><?php echo $html; // phpcs:ignore ?></div>
+<?php endforeach; ?>
 <?php if ( isset( $t['scripts']['infopeak-captcha'] ) ) : ?>
 <script src="https://captcha.infopeak.io/infopeak-captcha.js?ver=<?php echo IPKCAP_VERSION; ?>" id="infopeak-captcha-js"></script>
 <script id="infopeak-captcha-js-after"><?php echo implode( "\n", $t['inline_scripts']['infopeak-captcha'] ); // phpcs:ignore ?></script>
@@ -86,7 +95,7 @@ if ( 'POST' === $_SERVER['REQUEST_METHOD'] ) {
 <script>
 // Stand-in for Gravity Forms' submission JS, loaded after the plugin's listener as on a real page.
 (function () {
-	var FORM = <?php echo (int) $id; ?>, MODE = <?php echo json_encode( $mode ); ?>;
+	var MODE = <?php echo json_encode( $mode ); ?>;
 	var filters = {};
 	window.gform = { utils: {
 		addAsyncFilter: function (n, fn) { (filters[n] = filters[n] || []).push(fn); },
@@ -97,7 +106,7 @@ if ( 'POST' === $_SERVER['REQUEST_METHOD'] ) {
 		var btn = e.target.closest && e.target.closest('.gform_button');
 		if (!btn) return;
 		e.preventDefault();
-		var form = btn.form;
+		var form = btn.form, FORM = parseInt(form.id.replace('gform_', ''), 10);
 		window.__submitting = true;
 		var data = await gform.utils.apply('gform/submission/pre_submission', { form: form, submissionType: 'submit', submissionMethod: MODE === 'postback' ? 'postback' : 'ajax', abort: false });
 		if (data.abort) return;

@@ -45,6 +45,16 @@ function apply_filters( $tag, $value, ...$rest ) {
 function has_filter( $tag ) {
 	return ! empty( $GLOBALS['ipk_test']['filters'][ $tag ] );
 }
+// The plugin is loaded the way WordPress loads it: before plugins_loaded.
+function did_action( $tag ) {
+	return 0;
+}
+function is_multisite() {
+	return ! empty( $GLOBALS['ipk_test']['multisite'] );
+}
+function get_site_option( $name, $default = false ) {
+	return isset( $GLOBALS['ipk_test']['site_options'][ $name ] ) ? $GLOBALS['ipk_test']['site_options'][ $name ] : $default;
+}
 
 // --- Options, i18n, escaping ---
 function get_option( $name, $default = false ) {

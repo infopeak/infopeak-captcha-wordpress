@@ -1,55 +1,27 @@
 // Gravity Forms integration in a real browser, with the live widget and the public
 // test credentials (ipk_test_sitekey / ipk_test_secret, never counted). Synthetic data only.
 //
-//   PLAYWRIGHT_CORE=<path to playwright-core> CHROMIUM=<chrome.exe> node tests/gravity-forms/browser.mjs
+//   PLAYWRIGHT_CORE=<path to playwright-core> CHROMIUM=<chrome.exe> node tests/integrations/gravity-forms/browser.mjs
 //
-// Starts `php -S` with site/router.php and a siteverify proxy that forwards to
-// captcha.infopeak.io, counts calls and can simulate a failure. Tokens are never logged.
+// Gravity Forms-specific scenarios (quick click, markup redrawn, file upload). The checks
+// every integration shares run from tests/integrations/run.mjs. Uses the stand-in site and
+// siteverify proxy from lib/env-gf.mjs. Tokens are never logged.
 
-import http from 'node:http';
-import { spawn } from 'node:child_process';
-import { mkdtempSync, readFileSync, writeFileSync, existsSync } from 'node:fs';
+import { writeFileSync, mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join, dirname } from 'node:path';
-import { fileURLToPath, pathToFileURL } from 'node:url';
+import { join } from 'node:path';
+import { pathToFileURL } from 'node:url';
+import { gfEnv } from '../lib/env-gf.mjs';
 
-const here = dirname(fileURLToPath(import.meta.url));
 const pw = await import(pathToFileURL(join(process.env.PLAYWRIGHT_CORE, 'index.js')).href);
 const chromium = pw.chromium || pw.default.chromium;
-const work = mkdtempSync(join(tmpdir(), 'ipkcap-gf-'));
-const entryLog = join(work, 'entries.jsonl');
-const upload = join(work, 'synthetic-application.pdf');
+const upload = join(mkdtempSync(join(tmpdir(), 'ipkcap-gf-upload-')), 'synthetic-application.pdf');
 writeFileSync(upload, '%PDF-1.4\n% synthetic test file\n' + 'x'.repeat(2048));
 
-// --- Siteverify proxy ---
-const stats = { calls: 0, valid: 0, invalid: 0, failNext: 0 };
-const proxy = http.createServer((req, res) => {
-	let body = '';
-	req.on('data', (c) => (body += c));
-	req.on('end', async () => {
-		stats.calls++;
-		const keys = Object.keys(JSON.parse(body));
-		if (keys.join() !== 'sitekey,secret,token') throw new Error('unexpected siteverify body keys: ' + keys);
-		if (stats.failNext > 0) {
-			stats.failNext--;
-			res.writeHead(503).end('{"error":"simulated outage"}');
-			return;
-		}
-		const r = await fetch('https://captcha.infopeak.io/api/v1/pow/siteverify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body });
-		const text = await r.text();
-		JSON.parse(text).valid === true ? stats.valid++ : stats.invalid++;
-		res.writeHead(r.status, { 'Content-Type': 'application/json' }).end(text);
-	});
-});
-await new Promise((r) => proxy.listen(8791, '127.0.0.1', r));
-
-const php = spawn('php', ['-S', '127.0.0.1:8790', join(here, 'site', 'router.php')], {
-	env: { ...process.env, SITEVERIFY_PROXY: 'http://127.0.0.1:8791/', ENTRY_LOG: entryLog },
-	stdio: 'ignore',
-});
-await new Promise((r) => setTimeout(r, 800));
-
-const entries = () => (existsSync(entryLog) ? readFileSync(entryLog, 'utf8').trim().split('\n').filter(Boolean).map(JSON.parse) : []);
+// Stand-in site and siteverify proxy (lib/env-gf.mjs).
+const env = await gfEnv();
+const stats = env.raw;
+const entries = env.entries;
 const results = [];
 let failed = 0;
 async function test(name, fn) {
@@ -203,8 +175,7 @@ await test('Form without InfoPeak: no widget, no script, saved as before', async
 });
 
 await browser.close();
-php.kill();
-proxy.close();
+await env.close();
 console.log(results.join('\n'));
 console.log(`\n${results.filter((r) => r.startsWith('PASS')).length}/${results.filter((r) => /^(PASS|FAIL)/.test(r)).length} passed`);
 process.exit(failed || results.some((r) => r.startsWith('PAGE ERROR')) ? 1 : 0);

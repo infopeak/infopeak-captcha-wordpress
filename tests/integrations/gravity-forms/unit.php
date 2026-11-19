@@ -3,8 +3,8 @@
  * Gravity Forms integration, server side. Each scenario runs in its own PHP
  * process, like one WordPress request, so nothing carries over between them.
  *
- *   php tests/gravity-forms/unit.php            runs every scenario
- *   php tests/gravity-forms/unit.php <name>     runs one (used by the runner)
+ *   php tests/integrations/gravity-forms/unit.php            runs every scenario
+ *   php tests/integrations/gravity-forms/unit.php <name>     runs one (used by the runner)
  */
 
 $scenarios = array(
@@ -84,7 +84,7 @@ $t['options']['ipkcap_settings'] = array( 'sitekey' => 'ipk_test_sitekey', 'secr
 if ( 'no_gravity_forms_loads' !== $name ) {
 	ipk_test_define_gf();
 }
-require dirname( __DIR__, 2 ) . '/infopeak-captcha/infopeak-captcha.php';
+require dirname( __DIR__, 3 ) . '/infopeak-captcha/infopeak-captcha.php';
 
 $protected   = ipk_test_form( 2, array( 'ipkcap_enabled' => '1' ) );
 $unprotected = ipk_test_form( 7 );
@@ -258,7 +258,11 @@ switch ( $name ) {
 		check( $body['token'] === 'tok-synthetic-1', 'token sent as posted' );
 		$public = $r['message'] . $html . implode( '', $t['inline_scripts']['infopeak-captcha'] );
 		check( strpos( $public, 'synthetic-secret-123' ) === false && strpos( $public, 'tok-synthetic-1' ) === false, 'secret and token never in page output' );
-		$src = file_get_contents( dirname( __DIR__, 2 ) . '/infopeak-captcha/infopeak-captcha.php' );
+		$src = '';
+		$dir = new RecursiveIteratorIterator( new RecursiveDirectoryIterator( dirname( __DIR__, 3 ) . '/infopeak-captcha', FilesystemIterator::SKIP_DOTS ) );
+		foreach ( $dir as $file ) {
+			$src .= 'php' === $file->getExtension() ? file_get_contents( $file->getPathname() ) : '';
+		}
 		check( ! preg_match( '/\b(error_log|var_dump|print_r|trigger_error)\s*\(/', $src ), 'nothing is logged' );
 		break;
 
