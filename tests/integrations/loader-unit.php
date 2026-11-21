@@ -63,6 +63,7 @@ $marker = array(
 	'gravity-forms'  => 'gform_validation',
 	'fluent-forms'   => 'fluentform/validation_errors',
 	'formidable'     => 'frm_validate_entry',
+	'forminator'     => 'forminator_custom_form_submit_errors',
 );
 function loaded( $marker ) {
 	$on = array();
@@ -94,7 +95,7 @@ switch ( $name ) {
 		break;
 
 	case 'active_plugins_list_loads_now':
-		$t['options']['active_plugins'] = array( 'contact-form-7/wp-contact-form-7.php', 'wpforms-lite/wpforms.php', 'jetpack/jetpack.php', 'woocommerce/woocommerce.php', 'gravityforms/gravityforms.php', 'fluentform/fluentform.php', 'formidable/formidable.php' );
+		$t['options']['active_plugins'] = array( 'contact-form-7/wp-contact-form-7.php', 'wpforms-lite/wpforms.php', 'jetpack/jetpack.php', 'woocommerce/woocommerce.php', 'gravityforms/gravityforms.php', 'fluentform/fluentform.php', 'formidable/formidable.php', 'forminator/forminator.php' );
 		load_plugin();
 		check( loaded( $marker ) === array_keys( $marker ), 'all loaded while the plugin file loads: ' . implode( ',', loaded( $marker ) ) );
 		break;
@@ -126,9 +127,10 @@ switch ( $name ) {
 		define( 'JETPACK__VERSION', '16.4' );
 		define( 'FLUENTFORM_VERSION', '6.2.17' );
 		function load_formidable_forms() {}
+		define( 'FORMINATOR_VERSION', '1.58.6' );
 		ipk_test_define_gf();
 		fire_plugins_loaded();
-		check( loaded( $marker ) === array( 'core', 'jetpack', 'gravity-forms', 'fluent-forms', 'formidable' ), 'loaded on plugins_loaded: ' . implode( ',', loaded( $marker ) ) );
+		check( loaded( $marker ) === array( 'core', 'jetpack', 'gravity-forms', 'fluent-forms', 'formidable', 'forminator' ), 'loaded on plugins_loaded: ' . implode( ',', loaded( $marker ) ) );
 		break;
 
 	case 'loaded_after_plugins_loaded_fired':
@@ -147,7 +149,7 @@ switch ( $name ) {
 		break;
 
 	case 'hook_priorities_unchanged':
-		$t['options']['active_plugins'] = array( 'contact-form-7/wp-contact-form-7.php', 'wpforms-lite/wpforms.php', 'jetpack/jetpack.php', 'woocommerce/woocommerce.php', 'gravityforms/gravityforms.php', 'fluentform/fluentform.php', 'formidable/formidable.php' );
+		$t['options']['active_plugins'] = array( 'contact-form-7/wp-contact-form-7.php', 'wpforms-lite/wpforms.php', 'jetpack/jetpack.php', 'woocommerce/woocommerce.php', 'gravityforms/gravityforms.php', 'fluentform/fluentform.php', 'formidable/formidable.php', 'forminator/forminator.php' );
 		load_plugin();
 		$expect = array(
 			'authenticate' => 30, 'registration_errors' => 10, 'lostpassword_post' => 10, 'preprocess_comment' => 10, 'comment_form_submit_field' => 10,
@@ -160,6 +162,8 @@ switch ( $name ) {
 			'fluentform/render_item_submit_button' => 5, 'fluentform/render_item_step_end' => 5, 'fluentform/validation_errors' => 10,
 			'fluentform/white_listed_fields' => 10, 'fluentform/insert_response_data' => 10,
 			'frm_before_submit_btn' => 10, 'frm_validate_entry' => 10,
+			'forminator_before_form_render' => 10, 'forminator_after_form_render' => 10, 'forminator_render_button_markup' => 10,
+			'forminator_pagination_submit_markup' => 10, 'forminator_custom_form_submit_errors' => 10, 'forminator_custom_form_invalid_form_message' => 10,
 		);
 		foreach ( $expect as $hook => $prio ) {
 			check( isset( $t['filters'][ $hook ] ) && array_keys( $t['filters'][ $hook ] ) === array( $prio ), "$hook at priority $prio" );
@@ -174,7 +178,7 @@ switch ( $name ) {
 		check( count( $t['inline_scripts']['infopeak-captcha'] ) === 1, 'one inline script after the widget script' );
 		check( strpos( $js, 'window.ipkcapForms' ) !== false && strpos( $js, 'ipk.resetOn' ) !== false, 'shared helper' );
 		check( strpos( $js, "resetOn('wpcf7submit'" ) !== false && strpos( $js, "resetOn('checkout_error', 'form.checkout'" ) !== false, 'CF7 and WooCommerce listeners' );
-		check( strpos( $js, 'wpformsAjaxSubmit' ) === false && strpos( $js, 'grunion' ) === false && strpos( $js, 'gform' ) === false && strpos( $js, 'fluentform_' ) === false && strpos( $js, 'frmForm' ) === false, 'no listeners for inactive plugins' );
+		check( strpos( $js, 'wpformsAjaxSubmit' ) === false && strpos( $js, 'grunion' ) === false && strpos( $js, 'gform' ) === false && strpos( $js, 'fluentform_' ) === false && strpos( $js, 'frmForm' ) === false && strpos( $js, 'forminator:' ) === false, 'no listeners for inactive plugins' );
 		check( strpos( $js, 'window.ipkcapForms' ) < strpos( $js, 'wpcf7submit' ), 'helper defined before it is used' );
 		break;
 

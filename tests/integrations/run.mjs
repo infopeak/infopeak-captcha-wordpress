@@ -19,8 +19,9 @@ import woo from './adapters/woocommerce.mjs';
 import gf from './adapters/gravity-forms.mjs';
 import fluent from './adapters/fluent-forms.mjs';
 import formidable from './adapters/formidable.mjs';
+import forminator from './adapters/forminator.mjs';
 
-const wpAdapters = [login, register, lostpw, comments, cf7, wpforms, jetpack, woo, fluent, formidable];
+const wpAdapters = [login, register, lostpw, comments, cf7, wpforms, jetpack, woo, fluent, formidable, forminator];
 const keys = process.argv.slice(2);
 const want = (key) => !keys.length || keys.includes(key);
 
@@ -32,8 +33,8 @@ try {
 		globalThis.IPK_CFG = env.cfg;
 		await env.reset();
 		for (const a of wpAdapters) if (want(a.key)) await runChecks(a, env, browser, runner);
-		// CF7, WPForms, Jetpack, Fluent Forms and Formidable on one post that also has the comment form.
-		if (want('mixed')) await runMixed([cf7, wpforms, jetpack, fluent, formidable], '/mixed/', env, browser, runner, 1);
+		// CF7, WPForms, Jetpack, Fluent Forms, Formidable and Forminator on one post that also has the comment form.
+		if (want('mixed')) await runMixed([cf7, wpforms, jetpack, fluent, formidable, forminator], '/mixed/', env, browser, runner, 1);
 	}
 	if (want(gf.key)) {
 		const env = await gfEnv();

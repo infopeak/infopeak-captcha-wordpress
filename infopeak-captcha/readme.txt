@@ -4,7 +4,7 @@ Tags: captcha, spam, privacy, gdpr, login protection
 Requires at least: 5.8
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.5.0
+Stable tag: 1.6.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -37,9 +37,10 @@ Instead of tracking visitors or making them click traffic lights, it uses **proo
 * Gravity Forms forms (turned on form by form)
 * Fluent Forms forms (regular forms in Fluent Forms Free)
 * Formidable Forms forms (Formidable Forms Lite)
+* Forminator forms (not polls or quizzes)
 * WooCommerce checkout (classic checkout)
 
-Each can be toggled individually on the settings page. The widget is added to your forms automatically, so there is nothing to edit in Contact Form 7, WPForms, Jetpack Forms, Fluent Forms, Formidable Forms or WooCommerce. In Gravity Forms you choose which forms to protect, under Form Settings.
+Each can be toggled individually on the settings page. The widget is added to your forms automatically, so there is nothing to edit in Contact Form 7, WPForms, Jetpack Forms, Fluent Forms, Formidable Forms, Forminator or WooCommerce. In Gravity Forms you choose which forms to protect, under Form Settings.
 
 **Setup takes two minutes**
 
@@ -135,6 +136,12 @@ Yes, the forms of Formidable Forms Lite, with or without AJAX submit. When Formi
 
 InfoPeak works next to Formidable's own Captcha field (reCAPTCHA, hCaptcha or Turnstile). If a form has that field, both checks run; remove the field if you only want InfoPeak.
 
+= Does it work with Forminator? =
+
+Yes, Forminator's forms (the free version), including forms with several pages, where the widget appears on the last page next to the submit button. When Forminator is active, the widget appears in every form. It is on by default; to leave your Forminator forms as they are, untick Forminator under Settings → InfoPeak Captcha and save. The token is checked in Forminator's own check of the submission, before it is saved and before any email is sent, and a visitor who corrects a mistake can send again without reloading the page. Polls and quizzes are not protected.
+
+InfoPeak works next to Forminator's own CAPTCHA field (reCAPTCHA, hCaptcha or Turnstile). If a form has that field, both checks run; remove the field if you only want InfoPeak. "Save and continue later" drafts are saved without a check, as they are not sent on.
+
 = Does it work with caching plugins? =
 
 Yes. The widget is plain JavaScript loaded from captcha.infopeak.io and works on fully cached pages.
@@ -161,6 +168,13 @@ Yes - 10,000 verifications per month, free forever. Paid plans start at 100,000 
 6. The widget on the login form - verified automatically, no interaction needed.
 
 == Changelog ==
+
+= 1.6.0 =
+* New: protects Forminator forms (the free version). The widget is added in front of the submit button, on the last page of a form with several pages, and the token is checked in Forminator's own check of the submission, before it is saved and before any email is sent. A visitor who corrects a mistake can send again without reloading the page. Polls and quizzes are not protected.
+* Updating from 1.5.0 with Forminator active: the protection is on straight away for all your existing Forminator forms, as soon as your sitekey and secret are set. Nothing in the forms themselves is changed. If a form already has Forminator's own CAPTCHA field, both checks run; remove that field if you only want InfoPeak.
+* To turn it off: Settings → InfoPeak Captcha, untick Forminator under Form plugins and save.
+* If you use a page cache, clear it after updating. A page cached before the update has no widget, so its Forminator form would be refused until the page is cached again.
+* Tested with Forminator 1.58.6: one-page and two-page forms, two forms on one page, a form that also has Forminator's Turnstile field, a page served from a page cache, and phone-sized screens.
 
 = 1.5.0 =
 * New: protects Formidable Forms Lite. The widget is added in front of the submit button of every form, and the token is checked in Formidable's own validation, before the entry is saved and before any email or other form action runs. It works with normal and AJAX submissions, and a visitor who corrects a mistake can send again without reloading the page.
@@ -210,6 +224,9 @@ Yes - 10,000 verifications per month, free forever. Paid plans start at 100,000 
 * Initial release: login, registration, lost-password and comment protection.
 
 == Upgrade Notice ==
+
+= 1.6.0 =
+Adds protection for Forminator forms, on for all forms right after the update (untick it under Settings → InfoPeak Captcha to turn it off). Clear your page cache after updating.
 
 = 1.5.0 =
 Adds protection for Formidable Forms Lite, on for all forms right after the update (untick it under Settings → InfoPeak Captcha to turn it off). Clear your page cache after updating.

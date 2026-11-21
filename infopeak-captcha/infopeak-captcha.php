@@ -2,8 +2,8 @@
 /**
  * Plugin Name:       InfoPeak Captcha
  * Plugin URI:        https://infopeak.io/products/captcha
- * Description:       Privacy-first, EU-hosted captcha for WordPress. No tracking, no cookies, no image puzzles - protects login, registration, password reset, comments, Contact Form 7, WPForms, Jetpack Forms, Gravity Forms, Fluent Forms, Formidable Forms and WooCommerce checkout.
- * Version:           1.5.0
+ * Description:       Privacy-first, EU-hosted captcha for WordPress. No tracking, no cookies, no image puzzles - protects login, registration, password reset, comments, Contact Form 7, WPForms, Jetpack Forms, Gravity Forms, Fluent Forms, Formidable Forms, Forminator and WooCommerce checkout.
+ * Version:           1.6.0
  * Requires at least: 5.8
  * Requires PHP:      7.4
  * Author:            InfoPeak
@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'IPKCAP_VERSION', '1.5.0' );
+define( 'IPKCAP_VERSION', '1.6.0' );
 define( 'IPKCAP_API_ORIGIN', 'https://captcha.infopeak.io' );
 define( 'IPKCAP_FIELD', 'infopeak-captcha-response' );
 
@@ -56,6 +56,7 @@ function ipkcap_get_settings() {
 		'enable_gf'        => 1,
 		'enable_fluent'    => 1,
 		'enable_formidable' => 1,
+		'enable_forminator' => 1,
 	);
 	$saved = get_option( 'ipkcap_settings', array() );
 	return wp_parse_args( is_array( $saved ) ? $saved : array(), $defaults );
@@ -346,6 +347,12 @@ function ipkcap_integrations() {
 				return function_exists( 'load_formidable_forms' );
 			},
 		),
+		'forminator'     => array(
+			'plugin'  => 'forminator.php',
+			'present' => function () {
+				return defined( 'FORMINATOR_VERSION' );
+			},
+		),
 	);
 }
 
@@ -422,6 +429,7 @@ function ipkcap_sanitize_settings( $input ) {
 		'enable_gf'       => empty( $input['enable_gf'] ) ? 0 : 1,
 		'enable_fluent'   => empty( $input['enable_fluent'] ) ? 0 : 1,
 		'enable_formidable' => empty( $input['enable_formidable'] ) ? 0 : 1,
+		'enable_forminator' => empty( $input['enable_forminator'] ) ? 0 : 1,
 	);
 }
 
@@ -516,6 +524,7 @@ function ipkcap_render_settings_page() {
 								'enable_gf'      => array( __( 'Gravity Forms', 'infopeak-captcha' ), class_exists( 'GFForms' ) ),
 								'enable_fluent'  => array( __( 'Fluent Forms', 'infopeak-captcha' ), defined( 'FLUENTFORM_VERSION' ) ),
 								'enable_formidable' => array( __( 'Formidable Forms', 'infopeak-captcha' ), function_exists( 'load_formidable_forms' ) ),
+								'enable_forminator' => array( __( 'Forminator', 'infopeak-captcha' ), defined( 'FORMINATOR_VERSION' ) ),
 							);
 							foreach ( $ipkcap_plugins as $ipkcap_key => $ipkcap_plugin ) :
 								?>

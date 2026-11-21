@@ -205,7 +205,35 @@ $frm_ajax  = ipk_formidable( 'ipkfrmajax', true );
 $frm_ajax2 = ipk_formidable( 'ipkfrmajax2', true );
 $frm_post  = ipk_formidable( 'ipkfrmpost', false );
 
+// --- Forminator ---
+function ipk_forminator( $name, $paged ) {
+	$existing = get_posts( array( 'post_type' => 'forminator_forms', 'title' => $name, 'post_status' => 'any', 'numberposts' => 1 ) );
+	if ( $existing ) {
+		return '[forminator_form id="' . (int) $existing[0]->ID . '"]';
+	}
+	$row = function ( $n, $field ) {
+		return array( 'wrapper_id' => 'wrapper-ipk-' . $n, 'fields' => array( $field + array( 'cols' => '12' ) ) );
+	};
+	$wrappers = array(
+		$row( 1, array( 'element_id' => 'text-1', 'type' => 'text', 'required' => 'true', 'field_label' => 'Name', 'input_type' => 'line' ) ),
+		$row( 2, array( 'element_id' => 'email-1', 'type' => 'email', 'required' => 'true', 'field_label' => 'Email', 'validation' => true ) ),
+	);
+	if ( $paged ) {
+		$wrappers[] = $row( 3, array( 'element_id' => 'page-break-1', 'type' => 'page-break', 'btn_left' => 'Previous', 'btn_right' => 'Next' ) );
+	}
+	$wrappers[] = $row( 4, array( 'element_id' => 'textarea-1', 'type' => 'textarea', 'required' => false, 'field_label' => 'Message', 'input_type' => 'paragraph' ) );
+	$id = Forminator_API::add_form( $name, $wrappers, array( 'formName' => $name, 'submission-behaviour' => 'behaviour-thankyou', 'thankyou-message' => 'Thank you! IPK-FMN-OK', 'enable-ajax' => 'true' ) );
+	return '[forminator_form id="' . (int) $id . '"]';
+}
+$fmn_one   = ipk_forminator( 'IPK Forminator', false );
+$fmn_two   = ipk_forminator( 'IPK Forminator 2', false );
+$fmn_paged = ipk_forminator( 'IPK Forminator pages', true );
+
 // --- Pages ---
+ipk_page( 'forminator', 'Forminator', $fmn_one );
+ipk_page( 'forminator-pages', 'Forminator pages', $fmn_paged );
+ipk_page( 'forminator-two', 'Forminator two forms', $fmn_one . "\n\n" . $fmn_two );
+ipk_page( 'cached-forminator', 'Forminator cached', $fmn_one );
 ipk_page( 'formidable-ajax', 'Formidable AJAX', $frm_ajax );
 ipk_page( 'formidable-post', 'Formidable postback', $frm_post );
 ipk_page( 'formidable-two', 'Formidable two forms', $frm_ajax . "\n\n" . $frm_ajax2 );
@@ -233,7 +261,7 @@ ipk_page( 'ipk-comments', 'Comments', '<p>Synthetic post for comments.</p>', 'po
 ipk_page( 'cached-comments', 'Comments cached', '<p>Synthetic post for comments, cached.</p>', 'post', 'open' );
 
 // Several form plugins on one page, plus the comment form.
-ipk_page( 'mixed', 'Mixed forms', $cf7a . "\n\n" . $wpf_ajax . "\n\n" . ipk_jp_block( 'IPK JP mixed' ) . "\n\n" . $ff_one . "\n\n" . $frm_ajax, 'post', 'open' );
+ipk_page( 'mixed', 'Mixed forms', $cf7a . "\n\n" . $wpf_ajax . "\n\n" . ipk_jp_block( 'IPK JP mixed' ) . "\n\n" . $ff_one . "\n\n" . $frm_ajax . "\n\n" . $fmn_one, 'post', 'open' );
 
 // --- WooCommerce (classic checkout, shortcode) ---
 $product_id = wc_get_product_id_by_sku( 'IPK-TEST' );
