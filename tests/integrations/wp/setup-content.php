@@ -167,7 +167,50 @@ function ipk_fluent( $title, $multistep ) {
 $ff_one = ipk_fluent( 'IPK Fluent', false );
 $ff_two = ipk_fluent( 'IPK Fluent 2', false );
 
+// --- Formidable Forms ---
+function ipk_formidable( $key, $ajax ) {
+	$form_id = FrmForm::get_id_by_key( $key );
+	$options = array(
+		'success_msg'  => '<p>Thank you! IPK-FRM-OK</p>',
+		'ajax_submit'  => $ajax ? 1 : 0,
+		'show_form'    => 0,
+		'no_save'      => 0,
+	);
+	if ( ! $form_id ) {
+		$form_id = FrmForm::create( array( 'form_key' => $key, 'name' => 'IPK Formidable ' . $key, 'description' => '', 'options' => $options ) );
+		foreach ( array( array( 'text', 'Name', 1 ), array( 'email', 'Email', 1 ), array( 'textarea', 'Message', 0 ) ) as $i => $f ) {
+			$field = FrmFieldsHelper::setup_new_vars( $f[0], $form_id );
+			$field['name']       = $f[1];
+			$field['field_key']  = $key . '_' . strtolower( $f[1] );
+			$field['required']   = $f[2];
+			$field['field_order'] = $i + 1;
+			FrmField::create( $field );
+		}
+		// The email notification, as a new form in the builder gets it.
+		wp_insert_post( array(
+			'post_type'    => 'frm_form_actions',
+			'post_status'  => 'publish',
+			'post_excerpt' => 'email',
+			'post_title'   => 'Send Email',
+			'menu_order'   => $form_id,
+			'post_content' => wp_json_encode( array( 'email_to' => '[admin_email]', 'from' => '[sitename] <[admin_email]>', 'email_subject' => 'Formidable entry: ' . $key, 'email_message' => '[default-message]', 'event' => array( 'create' ) ) ),
+		) );
+	} else {
+		$form = FrmForm::getOne( $form_id );
+		FrmForm::update( $form_id, array( 'options' => array_merge( (array) $form->options, $options ) ) );
+	}
+	return '[formidable id="' . (int) $form_id . '"]';
+}
+$frm_ajax  = ipk_formidable( 'ipkfrmajax', true );
+$frm_ajax2 = ipk_formidable( 'ipkfrmajax2', true );
+$frm_post  = ipk_formidable( 'ipkfrmpost', false );
+
 // --- Pages ---
+ipk_page( 'formidable-ajax', 'Formidable AJAX', $frm_ajax );
+ipk_page( 'formidable-post', 'Formidable postback', $frm_post );
+ipk_page( 'formidable-two', 'Formidable two forms', $frm_ajax . "\n\n" . $frm_ajax2 );
+ipk_page( 'cached-formidable', 'Formidable cached', $frm_ajax );
+
 ipk_page( 'fluent', 'Fluent Forms', $ff_one );
 ipk_page( 'fluent-two', 'Fluent Forms two forms', $ff_one . "\n\n" . $ff_two );
 ipk_page( 'cached-fluent', 'Fluent Forms cached', $ff_one );
@@ -190,7 +233,7 @@ ipk_page( 'ipk-comments', 'Comments', '<p>Synthetic post for comments.</p>', 'po
 ipk_page( 'cached-comments', 'Comments cached', '<p>Synthetic post for comments, cached.</p>', 'post', 'open' );
 
 // Several form plugins on one page, plus the comment form.
-ipk_page( 'mixed', 'Mixed forms', $cf7a . "\n\n" . $wpf_ajax . "\n\n" . ipk_jp_block( 'IPK JP mixed' ) . "\n\n" . $ff_one, 'post', 'open' );
+ipk_page( 'mixed', 'Mixed forms', $cf7a . "\n\n" . $wpf_ajax . "\n\n" . ipk_jp_block( 'IPK JP mixed' ) . "\n\n" . $ff_one . "\n\n" . $frm_ajax, 'post', 'open' );
 
 // --- WooCommerce (classic checkout, shortcode) ---
 $product_id = wc_get_product_id_by_sku( 'IPK-TEST' );

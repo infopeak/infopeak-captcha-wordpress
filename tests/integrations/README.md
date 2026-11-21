@@ -14,7 +14,7 @@ Synthetic data only.
 | two forms on one page | Each form has its own widget and token, one loader script, both go through. |
 | page served from the page cache | The page comes from a page cache (Cache Enabler), holds no token, and a submission goes through. |
 | 375 px | The widget fits a phone screen, no horizontal scroll, a submission goes through. |
-| mixed page | CF7, WPForms, Jetpack and Fluent Forms on one post with the comment form: every widget starts and each form goes through without a reload. |
+| mixed page | CF7, WPForms, Jetpack, Fluent Forms and Formidable on one post with the comment form: every widget starts and each form goes through without a reload. |
 
 ## Layout
 
@@ -50,7 +50,7 @@ PLAYWRIGHT_CORE=<path to playwright-core> CHROMIUM=<path to chrome> node tests/i
 
 `deploy <commit>` puts that commit's plugin on the site instead of the working tree, which is
 how a change is compared with the code before it. `run.mjs cf7 wpforms` runs only those
-integrations (keys: `login register lostpw comments cf7 wpforms jetpack woo fluent mixed gf`), and
+integrations (keys: `login register lostpw comments cf7 wpforms jetpack woo fluent formidable mixed gf`), and
 `ONLY_CHECK="two forms"` only the checks whose name matches. Afterwards:
 
 ```bash

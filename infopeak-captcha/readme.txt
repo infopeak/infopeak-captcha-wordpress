@@ -4,7 +4,7 @@ Tags: captcha, spam, privacy, gdpr, login protection
 Requires at least: 5.8
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.4.0
+Stable tag: 1.5.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -36,9 +36,10 @@ Instead of tracking visitors or making them click traffic lights, it uses **proo
 * Jetpack Forms (the contact form built into Jetpack)
 * Gravity Forms forms (turned on form by form)
 * Fluent Forms forms (regular forms in Fluent Forms Free)
+* Formidable Forms forms (Formidable Forms Lite)
 * WooCommerce checkout (classic checkout)
 
-Each can be toggled individually on the settings page. The widget is added to your forms automatically, so there is nothing to edit in Contact Form 7, WPForms, Jetpack Forms, Fluent Forms or WooCommerce. In Gravity Forms you choose which forms to protect, under Form Settings.
+Each can be toggled individually on the settings page. The widget is added to your forms automatically, so there is nothing to edit in Contact Form 7, WPForms, Jetpack Forms, Fluent Forms, Formidable Forms or WooCommerce. In Gravity Forms you choose which forms to protect, under Form Settings.
 
 **Setup takes two minutes**
 
@@ -128,6 +129,12 @@ Yes, the regular forms of Fluent Forms Free. When Fluent Forms is active, the wi
 
 Conversational forms are not protected: they have no submit button the widget can stand in front of, so they are left as they are.
 
+= Does it work with Formidable Forms? =
+
+Yes, the forms of Formidable Forms Lite, with or without AJAX submit. When Formidable Forms is active, the widget appears in every form, in front of the submit button. It is on by default; to leave your Formidable forms as they are, untick Formidable Forms under Settings → InfoPeak Captcha and save. The token is checked in Formidable's own validation, before the entry is saved and before any email or other form action runs, and a visitor who corrects a mistake can send again without reloading the page. The captcha's message is shown with the form's other errors at the top of the form.
+
+InfoPeak works next to Formidable's own Captcha field (reCAPTCHA, hCaptcha or Turnstile). If a form has that field, both checks run; remove the field if you only want InfoPeak.
+
 = Does it work with caching plugins? =
 
 Yes. The widget is plain JavaScript loaded from captcha.infopeak.io and works on fully cached pages.
@@ -154,6 +161,13 @@ Yes - 10,000 verifications per month, free forever. Paid plans start at 100,000 
 6. The widget on the login form - verified automatically, no interaction needed.
 
 == Changelog ==
+
+= 1.5.0 =
+* New: protects Formidable Forms Lite. The widget is added in front of the submit button of every form, and the token is checked in Formidable's own validation, before the entry is saved and before any email or other form action runs. It works with normal and AJAX submissions, and a visitor who corrects a mistake can send again without reloading the page.
+* Updating from 1.4.0 with Formidable Forms active: the protection is on straight away for all your existing Formidable forms, as soon as your sitekey and secret are set. Nothing in the forms themselves is changed. If a form already has Formidable's own Captcha field, both checks run; remove that field if you only want InfoPeak.
+* To turn it off: Settings → InfoPeak Captcha, untick Formidable Forms under Form plugins and save.
+* If you use a page cache, clear it after updating. A page cached before the update has no widget, so its Formidable form would be refused until the page is cached again.
+* Tested with Formidable Forms 7.1.1 (Lite): normal and AJAX submissions, a form shown again after it was sent, two forms on one page, a page served from a page cache, and phone-sized screens. Formidable Forms Pro (multi-page forms, editing entries) was not tested.
 
 = 1.4.0 =
 * New: protects the regular forms of Fluent Forms Free. The widget is added in front of the submit button, and the token is checked in Fluent Forms' own validation, before the entry is saved and before any email is sent. A visitor who corrects a mistake can send again without reloading the page. The used token is not stored with the entry.
@@ -196,6 +210,9 @@ Yes - 10,000 verifications per month, free forever. Paid plans start at 100,000 
 * Initial release: login, registration, lost-password and comment protection.
 
 == Upgrade Notice ==
+
+= 1.5.0 =
+Adds protection for Formidable Forms Lite, on for all forms right after the update (untick it under Settings → InfoPeak Captcha to turn it off). Clear your page cache after updating.
 
 = 1.4.0 =
 Adds protection for Fluent Forms Free, on for all regular forms right after the update (untick it under Settings → InfoPeak Captcha to turn it off). Clear your page cache after updating.

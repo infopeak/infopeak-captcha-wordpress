@@ -44,8 +44,10 @@ up)
 	wpcli option update comment_previously_approved 0
 	wpcli user create "$IPK_USER" ipktest@example.test --user_pass="$IPK_USER_PASS" --role=subscriber
 	put_dir "$here/mu-plugin" /var/www/html/wp-content/mu-plugins
-	wpcli plugin install contact-form-7 wpforms-lite jetpack woocommerce fluentform cache-enabler plugin-check --activate
+	wpcli plugin install contact-form-7 wpforms-lite jetpack woocommerce fluentform formidable cache-enabler plugin-check --activate
 	wpcli jetpack module activate contact-form || true
+	# Formidable creates its tables on its own install step, which wp-cli activation skips.
+	wpcli eval 'FrmAppController::install();'
 	wpcli option update ipkcap_settings '{"sitekey":"ipk_test_sitekey","secret":"ipk_test_secret"}' --format=json
 	remote "cat > /tmp/$P-setup-content.php" < "$here/setup-content.php"
 	remote "docker run --rm --network $P --volumes-from $P-web --user 33:33 -e HOME=/tmp $DBENV -v /tmp/$P-setup-content.php:/setup-content.php:ro $IPK_CLI_IMAGE wp --path=/var/www/html eval-file /setup-content.php; rm -f /tmp/$P-setup-content.php"

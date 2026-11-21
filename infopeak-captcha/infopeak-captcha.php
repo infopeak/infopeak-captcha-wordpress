@@ -2,8 +2,8 @@
 /**
  * Plugin Name:       InfoPeak Captcha
  * Plugin URI:        https://infopeak.io/products/captcha
- * Description:       Privacy-first, EU-hosted captcha for WordPress. No tracking, no cookies, no image puzzles - protects login, registration, password reset, comments, Contact Form 7, WPForms, Jetpack Forms, Gravity Forms, Fluent Forms and WooCommerce checkout.
- * Version:           1.4.0
+ * Description:       Privacy-first, EU-hosted captcha for WordPress. No tracking, no cookies, no image puzzles - protects login, registration, password reset, comments, Contact Form 7, WPForms, Jetpack Forms, Gravity Forms, Fluent Forms, Formidable Forms and WooCommerce checkout.
+ * Version:           1.5.0
  * Requires at least: 5.8
  * Requires PHP:      7.4
  * Author:            InfoPeak
@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'IPKCAP_VERSION', '1.4.0' );
+define( 'IPKCAP_VERSION', '1.5.0' );
 define( 'IPKCAP_API_ORIGIN', 'https://captcha.infopeak.io' );
 define( 'IPKCAP_FIELD', 'infopeak-captcha-response' );
 
@@ -55,6 +55,7 @@ function ipkcap_get_settings() {
 		// Gravity Forms is also switched on per form (Form Settings), so nothing changes until an admin does that.
 		'enable_gf'        => 1,
 		'enable_fluent'    => 1,
+		'enable_formidable' => 1,
 	);
 	$saved = get_option( 'ipkcap_settings', array() );
 	return wp_parse_args( is_array( $saved ) ? $saved : array(), $defaults );
@@ -339,6 +340,12 @@ function ipkcap_integrations() {
 				return defined( 'FLUENTFORM_VERSION' );
 			},
 		),
+		'formidable'     => array(
+			'plugin'  => 'formidable.php',
+			'present' => function () {
+				return function_exists( 'load_formidable_forms' );
+			},
+		),
 	);
 }
 
@@ -414,6 +421,7 @@ function ipkcap_sanitize_settings( $input ) {
 		'enable_woo'      => empty( $input['enable_woo'] ) ? 0 : 1,
 		'enable_gf'       => empty( $input['enable_gf'] ) ? 0 : 1,
 		'enable_fluent'   => empty( $input['enable_fluent'] ) ? 0 : 1,
+		'enable_formidable' => empty( $input['enable_formidable'] ) ? 0 : 1,
 	);
 }
 
@@ -507,6 +515,7 @@ function ipkcap_render_settings_page() {
 								'enable_woo'     => array( __( 'WooCommerce checkout', 'infopeak-captcha' ), class_exists( 'WooCommerce' ) ),
 								'enable_gf'      => array( __( 'Gravity Forms', 'infopeak-captcha' ), class_exists( 'GFForms' ) ),
 								'enable_fluent'  => array( __( 'Fluent Forms', 'infopeak-captcha' ), defined( 'FLUENTFORM_VERSION' ) ),
+								'enable_formidable' => array( __( 'Formidable Forms', 'infopeak-captcha' ), function_exists( 'load_formidable_forms' ) ),
 							);
 							foreach ( $ipkcap_plugins as $ipkcap_key => $ipkcap_plugin ) :
 								?>
