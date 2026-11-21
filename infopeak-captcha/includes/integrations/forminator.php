@@ -91,6 +91,19 @@ add_filter( 'forminator_custom_form_invalid_form_message', function ( $message )
 	return empty( $GLOBALS['ipkcap_forminator_refused'] ) ? $message : ipkcap_error_message();
 } );
 
+// Under that message Forminator lists every error again for screen readers. Ours is the
+// message itself, so it is taken out of that list, or screen readers would read it twice.
+// The list stays an array: Forminator's script reads its length.
+add_filter( 'forminator_submission_error', function ( $response ) {
+	if ( empty( $GLOBALS['ipkcap_forminator_refused'] ) || ! is_array( $response ) || empty( $response['errors'] ) || ! is_array( $response['errors'] ) ) {
+		return $response;
+	}
+	$response['errors'] = array_values( array_filter( $response['errors'], function ( $error ) {
+		return ! ( is_array( $error ) && array_key_exists( 'infopeak-captcha', $error ) );
+	} ) );
+	return $response;
+} );
+
 // Forminator sends with AJAX and fires these on the form. After a refusal, and after a
 // success when the form stays on the page, the widget needs a fresh token. On a form with
 // pages the widget is hidden until Forminator shows the submit button on the last page.

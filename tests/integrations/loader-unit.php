@@ -163,7 +163,7 @@ switch ( $name ) {
 			'fluentform/white_listed_fields' => 10, 'fluentform/insert_response_data' => 10,
 			'frm_before_submit_btn' => 10, 'frm_validate_entry' => 10,
 			'forminator_before_form_render' => 10, 'forminator_after_form_render' => 10, 'forminator_render_button_markup' => 10,
-			'forminator_pagination_submit_markup' => 10, 'forminator_custom_form_submit_errors' => 10, 'forminator_custom_form_invalid_form_message' => 10,
+			'forminator_pagination_submit_markup' => 10, 'forminator_custom_form_submit_errors' => 10, 'forminator_custom_form_invalid_form_message' => 10, 'forminator_submission_error' => 10,
 		);
 		foreach ( $expect as $hook => $prio ) {
 			check( isset( $t['filters'][ $hook ] ) && array_keys( $t['filters'][ $hook ] ) === array( $prio ), "$hook at priority $prio" );
