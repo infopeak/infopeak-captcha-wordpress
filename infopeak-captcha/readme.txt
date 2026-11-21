@@ -158,6 +158,7 @@ Yes - 10,000 verifications per month, free forever. Paid plans start at 100,000 
 = 1.4.0 =
 * New: protects Fluent Forms. The widget is added in front of the submit button of every form, and the token is checked in Fluent Forms' own validation, before the entry is saved and before any email is sent. A visitor who corrects a mistake can send again without reloading the page. Turn it off under Settings → InfoPeak Captcha if you prefer.
 * Tested with Fluent Forms 6.2.17: AJAX submissions, two forms on one page, a page served from a page cache, and phone-sized screens. Multi-step forms (Fluent Forms Pro) were not tested.
+* Fix: a Gravity Forms form set to Danish on a site in another language now shows the captcha's error messages in Danish. Before, they were in English, because WordPress could not read the plugin's Danish translation file this way.
 * Under the hood: each form plugin's support now lives in its own file and is only loaded when that form plugin is active. Nothing changes on your forms.
 
 = 1.3.0 =

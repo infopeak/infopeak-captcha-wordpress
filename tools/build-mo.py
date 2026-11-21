@@ -37,7 +37,10 @@ def write_mo(entries, path):
     header_size = 7 * 4
     o_table = header_size
     t_table = o_table + len(keys) * 8
-    data_start = t_table + len(keys) * 8
+    # No hash table, but its offset must still point right after the translations table:
+    # WordPress' MO reader works out that table's length as hash offset - table offset.
+    h_table = t_table + len(keys) * 8
+    data_start = h_table
     offsets, data = [], b""
     for b in ids:
         offsets.append((len(b), data_start + len(data)))
@@ -46,7 +49,7 @@ def write_mo(entries, path):
     for b in strs:
         t_offsets.append((len(b), data_start + len(data)))
         data += b + b"\0"
-    out = struct.pack("<7I", 0x950412DE, 0, len(keys), o_table, t_table, 0, 0)
+    out = struct.pack("<7I", 0x950412DE, 0, len(keys), o_table, t_table, 0, h_table)
     out += b"".join(struct.pack("<2I", *o) for o in offsets)
     out += b"".join(struct.pack("<2I", *o) for o in t_offsets)
     path.write_bytes(out + data)

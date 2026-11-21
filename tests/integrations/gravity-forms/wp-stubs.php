@@ -71,7 +71,12 @@ class MO {
 		if ( strlen( $b ) < 28 || 0x950412de !== unpack( 'V', $b )[1] ) {
 			return false;
 		}
-		list( , $n, $o, $t ) = array_values( unpack( 'V4', substr( $b, 4, 16 ) ) );
+		list( , $n, $o, $t, , $h ) = array_values( unpack( 'V6', substr( $b, 4, 24 ) ) );
+		// The same checks as WordPress' MO::import_from_reader(): the tables must be in
+		// order and the hash table must start right after the translations table.
+		if ( $t - $o < 8 * $n || $h - $t < 8 * $n ) {
+			return false;
+		}
 		for ( $i = 0; $i < $n; $i++ ) {
 			$oi = unpack( 'V2', substr( $b, $o + 8 * $i, 8 ) );
 			$ti = unpack( 'V2', substr( $b, $t + 8 * $i, 8 ) );
