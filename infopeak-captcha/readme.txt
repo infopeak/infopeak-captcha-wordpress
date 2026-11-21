@@ -35,7 +35,7 @@ Instead of tracking visitors or making them click traffic lights, it uses **proo
 * WPForms forms
 * Jetpack Forms (the contact form built into Jetpack)
 * Gravity Forms forms (turned on form by form)
-* Fluent Forms forms
+* Fluent Forms forms (regular forms in Fluent Forms Free)
 * WooCommerce checkout (classic checkout)
 
 Each can be toggled individually on the settings page. The widget is added to your forms automatically, so there is nothing to edit in Contact Form 7, WPForms, Jetpack Forms, Fluent Forms or WooCommerce. In Gravity Forms you choose which forms to protect, under Form Settings.
@@ -124,7 +124,7 @@ Submissions made with GFAPI::submit_form() to a protected form also need a valid
 
 = Does it work with Fluent Forms? =
 
-Yes. Turn it on under Settings → InfoPeak Captcha and the widget appears in every Fluent Forms form, in front of the submit button. The token is checked in Fluent Forms' own validation, before the entry is saved and before any email notification is sent, and a visitor who corrects a mistake can send again without reloading the page. The used token is not stored with the entry.
+Yes, the regular forms of Fluent Forms Free. When Fluent Forms is active, the widget appears in every regular form, in front of the submit button. It is on by default; to leave your Fluent Forms forms as they are, untick Fluent Forms under Settings → InfoPeak Captcha and save. The token is checked in Fluent Forms' own validation, before the entry is saved and before any email notification is sent, and a visitor who corrects a mistake can send again without reloading the page. The used token is not stored with the entry.
 
 Conversational forms are not protected: they have no submit button the widget can stand in front of, so they are left as they are.
 
@@ -156,8 +156,12 @@ Yes - 10,000 verifications per month, free forever. Paid plans start at 100,000 
 == Changelog ==
 
 = 1.4.0 =
-* New: protects Fluent Forms. The widget is added in front of the submit button of every form, and the token is checked in Fluent Forms' own validation, before the entry is saved and before any email is sent. A visitor who corrects a mistake can send again without reloading the page. Turn it off under Settings → InfoPeak Captcha if you prefer.
-* Tested with Fluent Forms 6.2.17: AJAX submissions, two forms on one page, a page served from a page cache, and phone-sized screens. Multi-step forms (Fluent Forms Pro) were not tested.
+* New: protects the regular forms of Fluent Forms Free. The widget is added in front of the submit button, and the token is checked in Fluent Forms' own validation, before the entry is saved and before any email is sent. A visitor who corrects a mistake can send again without reloading the page. The used token is not stored with the entry.
+* Updating from 1.3.0 with Fluent Forms active: the protection is on straight away for all your existing regular Fluent Forms forms, as soon as your sitekey and secret are set. Nothing in the forms themselves is changed. Conversational forms are left as they are. If a form already uses Fluent Forms' own reCAPTCHA, hCaptcha or Turnstile field, both checks run; remove that field from the form if you only want InfoPeak.
+* To turn it off: Settings → InfoPeak Captcha, untick Fluent Forms under Form plugins and save.
+* If you use a page cache, clear it after updating. A page cached before the update has no widget, so its Fluent Forms form would be refused until the page is cached again.
+* Tested with Fluent Forms 6.2.17 (free): AJAX submissions, two forms on one page, a page served from a page cache, and phone-sized screens. Multi-step forms (Fluent Forms Pro) were not tested.
+* Gravity Forms: tested again with Gravity Forms 3.2.3.1 on WordPress 7.1.5 and PHP 8.4: normal and AJAX submissions, multi-page forms with file uploads, GFAPI::submit_form() and a form in another language than the site.
 * Fix: a Gravity Forms form set to Danish on a site in another language now shows the captcha's error messages in Danish. Before, they were in English, because WordPress could not read the plugin's Danish translation file this way.
 * Under the hood: each form plugin's support now lives in its own file and is only loaded when that form plugin is active. Nothing changes on your forms.
 
@@ -194,7 +198,7 @@ Yes - 10,000 verifications per month, free forever. Paid plans start at 100,000 
 == Upgrade Notice ==
 
 = 1.4.0 =
-Adds protection for Fluent Forms. Turned on automatically when Fluent Forms is installed.
+Adds protection for Fluent Forms Free, on for all regular forms right after the update (untick it under Settings → InfoPeak Captcha to turn it off). Clear your page cache after updating.
 
 = 1.3.0 =
 Adds protection for Gravity Forms, turned on form by form. Nothing changes on your forms until you turn it on.
