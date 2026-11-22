@@ -229,7 +229,44 @@ $fmn_one   = ipk_forminator( 'IPK Forminator', false );
 $fmn_two   = ipk_forminator( 'IPK Forminator 2', false );
 $fmn_paged = ipk_forminator( 'IPK Forminator pages', true );
 
+// --- Ninja Forms ---
+// Name, email, message, the InfoPeak Captcha field and submit, with an admin email, a
+// stored submission and a success message, as a form made in the builder has them.
+function ipk_ninja( $title, $with_captcha = true ) {
+	foreach ( Ninja_Forms()->form()->get_forms() as $existing ) {
+		if ( $existing->get_setting( 'title' ) === $title ) {
+			return '[ninja_form id="' . (int) $existing->get_id() . '"]';
+		}
+	}
+	$fields = array(
+		array( 'type' => 'textbox', 'label' => 'Name', 'key' => 'name', 'required' => 1, 'order' => 1 ),
+		array( 'type' => 'email', 'label' => 'Email', 'key' => 'email', 'required' => 1, 'order' => 2 ),
+		array( 'type' => 'textarea', 'label' => 'Message', 'key' => 'message', 'required' => 0, 'order' => 3 ),
+	);
+	if ( $with_captcha ) {
+		$fields[] = array( 'type' => 'infopeak_captcha', 'label' => 'InfoPeak Captcha', 'key' => 'infopeak_captcha', 'label_pos' => 'hidden', 'order' => 4 );
+	}
+	$fields[] = array( 'type' => 'submit', 'label' => 'Submit', 'key' => 'submit', 'processing_label' => 'Processing', 'order' => 5 );
+	$id = Ninja_Forms()->form()->import_form( array(
+		'settings' => array( 'title' => $title, 'default_label_pos' => 'above', 'show_title' => 0, 'clear_complete' => 1, 'hide_complete' => 1 ),
+		'fields'   => $fields,
+		'actions'  => array(
+			array( 'type' => 'save', 'label' => 'Store Submission', 'active' => 1 ),
+			array( 'type' => 'email', 'label' => 'Admin Email', 'active' => 1, 'to' => '{wp:admin_email}', 'email_subject' => 'Ninja Forms entry: ' . $title, 'email_message' => '{fields_table}', 'email_format' => 'html', 'bcc' => '' ),
+			array( 'type' => 'successmessage', 'label' => 'Success Message', 'active' => 1, 'success_msg' => '<p>Thank you! IPK-NF-OK</p>' ),
+		),
+	) );
+	return '[ninja_form id="' . (int) $id . '"]';
+}
+$nf_one  = ipk_ninja( 'IPK Ninja' );
+$nf_two  = ipk_ninja( 'IPK Ninja 2' );
+$nf_none = ipk_ninja( 'IPK Ninja without captcha', false );
+
 // --- Pages ---
+ipk_page( 'ninja', 'Ninja Forms', $nf_one );
+ipk_page( 'ninja-two', 'Ninja Forms two forms', $nf_one . "\n\n" . $nf_two );
+ipk_page( 'cached-ninja', 'Ninja Forms cached', $nf_one );
+ipk_page( 'ninja-without', 'Ninja Forms without the field', $nf_none );
 ipk_page( 'forminator', 'Forminator', $fmn_one );
 ipk_page( 'forminator-pages', 'Forminator pages', $fmn_paged );
 ipk_page( 'forminator-two', 'Forminator two forms', $fmn_one . "\n\n" . $fmn_two );
@@ -261,7 +298,7 @@ ipk_page( 'ipk-comments', 'Comments', '<p>Synthetic post for comments.</p>', 'po
 ipk_page( 'cached-comments', 'Comments cached', '<p>Synthetic post for comments, cached.</p>', 'post', 'open' );
 
 // Several form plugins on one page, plus the comment form.
-ipk_page( 'mixed', 'Mixed forms', $cf7a . "\n\n" . $wpf_ajax . "\n\n" . ipk_jp_block( 'IPK JP mixed' ) . "\n\n" . $ff_one . "\n\n" . $frm_ajax . "\n\n" . $fmn_one, 'post', 'open' );
+ipk_page( 'mixed', 'Mixed forms', $cf7a . "\n\n" . $wpf_ajax . "\n\n" . ipk_jp_block( 'IPK JP mixed' ) . "\n\n" . $ff_one . "\n\n" . $frm_ajax . "\n\n" . $fmn_one . "\n\n" . $nf_one, 'post', 'open' );
 
 // --- WooCommerce (classic checkout, shortcode) ---
 $product_id = wc_get_product_id_by_sku( 'IPK-TEST' );

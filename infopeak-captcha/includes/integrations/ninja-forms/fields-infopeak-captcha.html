@@ -1,0 +1,6 @@
+<script id="tmpl-nf-field-infopeak-captcha" type="text/template">
+	<input id="nf-field-{{{ data.id }}}" name="nf-field-{{{ data.id }}}" class="{{{ data.renderClasses() }}} nf-element" type="hidden" value="" />
+	<# if ( data.ipkcap_on ) { #>
+	<div class="infopeak-captcha" data-sitekey="{{{ data.site_key }}}"></div>
+	<# } #>
+</script>

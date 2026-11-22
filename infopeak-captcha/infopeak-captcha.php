@@ -57,6 +57,7 @@ function ipkcap_get_settings() {
 		'enable_fluent'    => 1,
 		'enable_formidable' => 1,
 		'enable_forminator' => 1,
+		'enable_ninja'      => 1,
 	);
 	$saved = get_option( 'ipkcap_settings', array() );
 	return wp_parse_args( is_array( $saved ) ? $saved : array(), $defaults );
@@ -353,6 +354,12 @@ function ipkcap_integrations() {
 				return defined( 'FORMINATOR_VERSION' );
 			},
 		),
+		'ninja-forms'    => array(
+			'plugin'  => 'ninja-forms.php',
+			'present' => function () {
+				return class_exists( 'Ninja_Forms', false );
+			},
+		),
 	);
 }
 
@@ -430,6 +437,7 @@ function ipkcap_sanitize_settings( $input ) {
 		'enable_fluent'   => empty( $input['enable_fluent'] ) ? 0 : 1,
 		'enable_formidable' => empty( $input['enable_formidable'] ) ? 0 : 1,
 		'enable_forminator' => empty( $input['enable_forminator'] ) ? 0 : 1,
+		'enable_ninja'      => empty( $input['enable_ninja'] ) ? 0 : 1,
 	);
 }
 
@@ -525,6 +533,7 @@ function ipkcap_render_settings_page() {
 								'enable_fluent'  => array( __( 'Fluent Forms', 'infopeak-captcha' ), defined( 'FLUENTFORM_VERSION' ) ),
 								'enable_formidable' => array( __( 'Formidable Forms', 'infopeak-captcha' ), function_exists( 'load_formidable_forms' ) ),
 								'enable_forminator' => array( __( 'Forminator', 'infopeak-captcha' ), defined( 'FORMINATOR_VERSION' ) ),
+								'enable_ninja'      => array( __( 'Ninja Forms', 'infopeak-captcha' ), class_exists( 'Ninja_Forms' ) ),
 							);
 							foreach ( $ipkcap_plugins as $ipkcap_key => $ipkcap_plugin ) :
 								?>
@@ -536,6 +545,7 @@ function ipkcap_render_settings_page() {
 							<?php endforeach; ?>
 							<p class="description"><?php esc_html_e( 'The widget is added to every form automatically. In Contact Form 7 you can place it yourself with the [infopeak_captcha] tag.', 'infopeak-captcha' ); ?></p>
 							<p class="description"><?php esc_html_e( 'Gravity Forms: turn it on for each form under Form Settings, InfoPeak Captcha. Forms you have not turned it on for are left as they are.', 'infopeak-captcha' ); ?></p>
+							<p class="description"><?php esc_html_e( 'Ninja Forms: add the InfoPeak Captcha field to each form in the form builder. Forms without the field are left as they are.', 'infopeak-captcha' ); ?></p>
 						</fieldset>
 					</td>
 				</tr>
