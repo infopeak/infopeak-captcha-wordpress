@@ -16,13 +16,14 @@ import cf7 from './adapters/cf7.mjs';
 import wpforms from './adapters/wpforms.mjs';
 import jetpack from './adapters/jetpack.mjs';
 import woo from './adapters/woocommerce.mjs';
+import { wooBlocks, wooBlocksUser } from './adapters/woocommerce-blocks.mjs';
 import gf from './adapters/gravity-forms.mjs';
 import fluent from './adapters/fluent-forms.mjs';
 import formidable from './adapters/formidable.mjs';
 import forminator from './adapters/forminator.mjs';
 import ninja from './adapters/ninja-forms.mjs';
 
-const wpAdapters = [login, register, lostpw, comments, cf7, wpforms, jetpack, woo, fluent, formidable, forminator, ninja];
+const wpAdapters = [login, register, lostpw, comments, cf7, wpforms, jetpack, woo, wooBlocks, wooBlocksUser, fluent, formidable, forminator, ninja];
 const keys = process.argv.slice(2);
 const want = (key) => !keys.length || keys.includes(key);
 

@@ -315,6 +315,10 @@ update_option( 'ipk_test_product', $product_id );
 $checkout = ipk_page( 'checkout', 'Checkout', '<!-- wp:shortcode -->[woocommerce_checkout]<!-- /wp:shortcode -->' );
 $cart     = ipk_page( 'cart', 'Cart', '<!-- wp:shortcode -->[woocommerce_cart]<!-- /wp:shortcode -->' );
 update_option( 'woocommerce_checkout_page_id', $checkout );
+// The Checkout block on its own page, with the content WooCommerce gives a new shop.
+$wc_block_content = new ReflectionMethod( 'WC_Install', 'get_checkout_block_content' );
+$wc_block_content->setAccessible( true );
+ipk_page( 'checkout-block', 'Checkout block', $wc_block_content->invoke( null ) );
 update_option( 'woocommerce_cart_page_id', $cart );
 update_option( 'woocommerce_default_country', 'DK' );
 update_option( 'woocommerce_currency', 'DKK' );

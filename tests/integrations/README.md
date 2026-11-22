@@ -50,7 +50,7 @@ PLAYWRIGHT_CORE=<path to playwright-core> CHROMIUM=<path to chrome> node tests/i
 
 `deploy <commit>` puts that commit's plugin on the site instead of the working tree, which is
 how a change is compared with the code before it. `run.mjs cf7 wpforms` runs only those
-integrations (keys: `login register lostpw comments cf7 wpforms jetpack woo fluent formidable forminator ninja mixed gf`), and
+integrations (keys: `login register lostpw comments cf7 wpforms jetpack woo wooblocks wooblocks-user fluent formidable forminator ninja mixed gf`), and
 `ONLY_CHECK="two forms"` only the checks whose name matches. Afterwards:
 
 ```bash

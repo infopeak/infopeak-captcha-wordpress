@@ -159,6 +159,7 @@ switch ( $name ) {
 			'wpforms_display_submit_before' => 10, 'wpforms_process_before' => 10,
 			'jetpack_contact_form_html' => 10, 'jetpack_contact_form_is_spam' => 10,
 			'woocommerce_after_checkout_billing_form' => 10, 'woocommerce_after_checkout_validation' => 10,
+			'render_block_woocommerce/checkout-actions-block' => 10, 'woocommerce_blocks_checkout_block_registration' => 10, 'woocommerce_blocks_loaded' => 10, 'woocommerce_store_api_checkout_update_customer_from_request' => 10,
 			'gform_form_settings_fields' => 10, 'gform_submit_button' => 10, 'gform_validation' => 9, 'gform_abort_submission_with_confirmation' => 10,
 			'gform_confirmation' => 99, 'gform_pre_submission' => 1, 'gform_validation_message' => 10,
 			'fluentform/render_item_submit_button' => 5, 'fluentform/render_item_step_end' => 5, 'fluentform/validation_errors' => 10,
