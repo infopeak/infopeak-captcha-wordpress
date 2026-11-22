@@ -18,6 +18,8 @@ import { pathToFileURL } from 'node:url';
 import { join } from 'node:path';
 
 export const FIELD = 'infopeak-captcha-response';
+// The token field, also when a form plugin needs it inside its own array (data[infopeak-captcha-response]).
+const FIELD_SEL = `input[name="${FIELD}"], input[name$="[${FIELD}]"]`;
 export const CAPTCHA_ERROR = /Captcha verification failed|cannot check your message right now/i;
 const TOKEN_TIMEOUT = 45000;
 const OUTCOME_TIMEOUT = 45000;
@@ -75,6 +77,7 @@ export function delta(a, b) {
 		invalid: b.invalid - a.invalid,
 		failed: b.failed - a.failed,
 		mails: b.mails.length - a.mails.length,
+		records: (b.records || 0) - (a.records || 0),
 	};
 }
 
@@ -88,21 +91,21 @@ export async function waitToken(container, not = '') {
 	await handle.waitForSelector('.infopeak-captcha', { state: 'attached', timeout: TOKEN_TIMEOUT });
 	const page = container.page();
 	await page.waitForFunction(
-		([el, field, old]) => {
-			const i = el.querySelector(`input[name="${field}"]`);
+		([el, sel, old]) => {
+			const i = el.querySelector(sel);
 			return i && i.value && i.value !== old;
 		},
-		[handle, FIELD, not],
+		[handle, FIELD_SEL, not],
 		{ timeout: TOKEN_TIMEOUT, polling: 100 }
 	);
-	return container.locator(`input[name="${FIELD}"]`).first().inputValue();
+	return container.locator(FIELD_SEL).first().inputValue();
 }
 
 export const setToken = (container, value) =>
-	container.evaluate((el, [field, v]) => el.querySelectorAll(`input[name="${field}"]`).forEach((i) => (i.value = v)), [FIELD, value]);
+	container.evaluate((el, [sel, v]) => el.querySelectorAll(sel).forEach((i) => (i.value = v)), [FIELD_SEL, value]);
 
 export const removeToken = (container) =>
-	container.evaluate((el, field) => el.querySelectorAll(`input[name="${field}"]`).forEach((i) => i.remove()), FIELD);
+	container.evaluate((el, sel) => el.querySelectorAll(sel).forEach((i) => i.remove()), FIELD_SEL);
 
 export const widgetInfo = (container) =>
 	container.evaluate((el) => {
@@ -182,6 +185,7 @@ async function expectAccepted(a, env, page, i, variant, before) {
 	const d = delta(before, await env.stats());
 	assert(d.valid === 1, 'one valid siteverify: ' + JSON.stringify(d));
 	if (a.mails) assert(d.mails >= 1, 'mail sent: ' + JSON.stringify(d));
+	if (a.records) assert(d.records === 1, 'one record stored: ' + JSON.stringify(d));
 }
 
 async function expectRefused(a, env, page, i, variant, before, stat) {
@@ -189,7 +193,7 @@ async function expectRefused(a, env, page, i, variant, before, stat) {
 	assert(o === 'refused', 'expected a refusal, got: ' + o);
 	assert(await refusedByCaptcha(a, page, i, variant), 'the captcha message is shown');
 	const d = delta(before, await env.stats());
-	assert(d.valid === 0 && d.mails === 0, 'nothing accepted, no mail: ' + JSON.stringify(d));
+	assert(d.valid === 0 && d.mails === 0 && d.records === 0, 'nothing accepted, no mail, nothing stored: ' + JSON.stringify(d));
 	if (stat) assert(d[stat] === 1, `one ${stat} siteverify: ` + JSON.stringify(d));
 }
 
@@ -236,7 +240,7 @@ export async function runChecks(a, env, browser, runner) {
 					const o = await a.submitWithoutToken(page, container(a, page), v, env);
 					assert(o === 'refused', 'expected a refusal, got: ' + o);
 					const d = delta(before, await env.stats());
-					assert(d.valid === 0 && d.mails === 0, 'nothing accepted: ' + JSON.stringify(d));
+					assert(d.valid === 0 && d.mails === 0 && d.records === 0, 'nothing accepted: ' + JSON.stringify(d));
 				} else {
 					await removeToken(container(a, page));
 					await expectRefused(a, env, page, 0, v, before);

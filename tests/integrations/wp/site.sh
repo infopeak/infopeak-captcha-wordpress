@@ -44,7 +44,7 @@ up)
 	wpcli option update comment_previously_approved 0
 	wpcli user create "$IPK_USER" ipktest@example.test --user_pass="$IPK_USER_PASS" --role=subscriber
 	put_dir "$here/mu-plugin" /var/www/html/wp-content/mu-plugins
-	wpcli plugin install contact-form-7 wpforms-lite jetpack woocommerce fluentform formidable forminator ninja-forms cache-enabler plugin-check --activate
+	wpcli plugin install contact-form-7 wpforms-lite jetpack woocommerce fluentform formidable forminator ninja-forms mailpoet cache-enabler plugin-check --activate
 	wpcli jetpack module activate contact-form || true
 	# Formidable creates its tables on its own install step, which wp-cli activation skips.
 	wpcli eval 'FrmAppController::install();'

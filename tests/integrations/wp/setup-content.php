@@ -262,11 +262,52 @@ $nf_one  = ipk_ninja( 'IPK Ninja' );
 $nf_two  = ipk_ninja( 'IPK Ninja 2' );
 $nf_none = ipk_ninja( 'IPK Ninja without captcha', false );
 
+// --- MailPoet ---
+// No confirmation email (the test site cannot send mail). MailPoet's own CAPTCHA set to
+// Disabled, as a site that uses InfoPeak Captcha instead would have it: its built-in one asks
+// every visitor who is not logged in for an image CAPTCHA, which a test cannot solve. With
+// Disabled, MailPoet still checks how the form was filled in (see adapters/mailpoet.mjs).
+$mp_settings = \MailPoet\DI\ContainerWrapper::getInstance()->get( \MailPoet\Settings\SettingsController::class );
+$mp_settings->set( 'signup_confirmation.enabled', false );
+$mp_settings->set( 'captcha.type', '' );
+function ipk_mailpoet( $name, $placement = array() ) {
+	$repo = \MailPoet\DI\ContainerWrapper::getInstance()->get( \MailPoet\Form\FormsRepository::class );
+	$form = $repo->findOneBy( array( 'name' => $name ) );
+	if ( ! $form ) {
+		$form = new \MailPoet\Entities\FormEntity( $name );
+	}
+	$form->setBody( array(
+		array( 'id' => 'email', 'name' => 'Email', 'type' => 'text', 'params' => array( 'label' => 'Email Address', 'required' => true ) ),
+		array( 'id' => 'submit', 'name' => 'Submit', 'type' => 'submit', 'params' => array( 'label' => 'Subscribe!' ) ),
+	) );
+	$form->setSettings( array(
+		'on_success'           => 'message',
+		'success_message'      => 'Check your inbox. IPK-MP-OK',
+		'segments'             => array( '3' ),
+		'segments_selected_by' => 'admin',
+		'form_placement'       => $placement,
+	) );
+	$form->setStatus( \MailPoet\Entities\FormEntity::STATUS_ENABLED );
+	$repo->persist( $form );
+	$repo->flush();
+	return $form->getId();
+}
+$mp_one  = '[mailpoet_form id="' . ipk_mailpoet( 'IPK MailPoet' ) . '"]';
+$mp_two  = '[mailpoet_form id="' . ipk_mailpoet( 'IPK MailPoet 2' ) . '"]';
+$mp_below_page = ipk_page( 'mailpoet-below', 'MailPoet below the page', '<p>Synthetic page with a MailPoet form below it.</p>' );
+$mp_popup_page = ipk_page( 'mailpoet-popup', 'MailPoet pop-up', '<p>Synthetic page with a MailPoet pop-up.</p>' );
+ipk_mailpoet( 'IPK MailPoet below', array( 'below_posts' => array( 'enabled' => '1', 'pages' => array( 'selected' => array( (string) $mp_below_page ) ), 'posts' => array( 'all' => '' ) ) ) );
+ipk_mailpoet( 'IPK MailPoet popup', array( 'popup' => array( 'enabled' => '1', 'delay' => '0', 'cookieExpiration' => '0', 'pages' => array( 'selected' => array( (string) $mp_popup_page ) ), 'posts' => array( 'all' => '' ) ) ) );
+delete_transient( \MailPoet\Form\DisplayFormInWPContent::NO_FORM_TRANSIENT_KEY );
+
 // --- Pages ---
 ipk_page( 'ninja', 'Ninja Forms', $nf_one );
 ipk_page( 'ninja-two', 'Ninja Forms two forms', $nf_one . "\n\n" . $nf_two );
 ipk_page( 'cached-ninja', 'Ninja Forms cached', $nf_one );
 ipk_page( 'ninja-without', 'Ninja Forms without the field', $nf_none );
+ipk_page( 'mailpoet', 'MailPoet', $mp_one );
+ipk_page( 'mailpoet-two', 'MailPoet two forms', $mp_one . "\n\n" . $mp_two );
+ipk_page( 'cached-mailpoet', 'MailPoet cached', $mp_one );
 ipk_page( 'forminator', 'Forminator', $fmn_one );
 ipk_page( 'forminator-pages', 'Forminator pages', $fmn_paged );
 ipk_page( 'forminator-two', 'Forminator two forms', $fmn_one . "\n\n" . $fmn_two );
@@ -298,7 +339,7 @@ ipk_page( 'ipk-comments', 'Comments', '<p>Synthetic post for comments.</p>', 'po
 ipk_page( 'cached-comments', 'Comments cached', '<p>Synthetic post for comments, cached.</p>', 'post', 'open' );
 
 // Several form plugins on one page, plus the comment form.
-ipk_page( 'mixed', 'Mixed forms', $cf7a . "\n\n" . $wpf_ajax . "\n\n" . ipk_jp_block( 'IPK JP mixed' ) . "\n\n" . $ff_one . "\n\n" . $frm_ajax . "\n\n" . $fmn_one . "\n\n" . $nf_one, 'post', 'open' );
+ipk_page( 'mixed', 'Mixed forms', $cf7a . "\n\n" . $wpf_ajax . "\n\n" . ipk_jp_block( 'IPK JP mixed' ) . "\n\n" . $ff_one . "\n\n" . $frm_ajax . "\n\n" . $fmn_one . "\n\n" . $nf_one . "\n\n" . $mp_one, 'post', 'open' );
 
 // --- WooCommerce (classic checkout, shortcode) ---
 $product_id = wc_get_product_id_by_sku( 'IPK-TEST' );

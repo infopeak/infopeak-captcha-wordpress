@@ -58,6 +58,7 @@ function ipkcap_get_settings() {
 		'enable_formidable' => 1,
 		'enable_forminator' => 1,
 		'enable_ninja'      => 1,
+		'enable_mailpoet'   => 1,
 	);
 	$saved = get_option( 'ipkcap_settings', array() );
 	return wp_parse_args( is_array( $saved ) ? $saved : array(), $defaults );
@@ -360,6 +361,12 @@ function ipkcap_integrations() {
 				return class_exists( 'Ninja_Forms', false );
 			},
 		),
+		'mailpoet'       => array(
+			'plugin'  => 'mailpoet.php',
+			'present' => function () {
+				return defined( 'MAILPOET_VERSION' );
+			},
+		),
 	);
 }
 
@@ -438,6 +445,7 @@ function ipkcap_sanitize_settings( $input ) {
 		'enable_formidable' => empty( $input['enable_formidable'] ) ? 0 : 1,
 		'enable_forminator' => empty( $input['enable_forminator'] ) ? 0 : 1,
 		'enable_ninja'      => empty( $input['enable_ninja'] ) ? 0 : 1,
+		'enable_mailpoet'   => empty( $input['enable_mailpoet'] ) ? 0 : 1,
 	);
 }
 
@@ -534,6 +542,7 @@ function ipkcap_render_settings_page() {
 								'enable_formidable' => array( __( 'Formidable Forms', 'infopeak-captcha' ), function_exists( 'load_formidable_forms' ) ),
 								'enable_forminator' => array( __( 'Forminator', 'infopeak-captcha' ), defined( 'FORMINATOR_VERSION' ) ),
 								'enable_ninja'      => array( __( 'Ninja Forms', 'infopeak-captcha' ), class_exists( 'Ninja_Forms' ) ),
+								'enable_mailpoet'   => array( __( 'MailPoet', 'infopeak-captcha' ), defined( 'MAILPOET_VERSION' ) ),
 							);
 							foreach ( $ipkcap_plugins as $ipkcap_key => $ipkcap_plugin ) :
 								?>

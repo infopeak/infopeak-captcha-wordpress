@@ -14,7 +14,7 @@ Synthetic data only.
 | two forms on one page | Each form has its own widget and token, one loader script, both go through. |
 | page served from the page cache | The page comes from a page cache (Cache Enabler), holds no token, and a submission goes through. |
 | 375 px | The widget fits a phone screen, no horizontal scroll, a submission goes through. |
-| mixed page | CF7, WPForms, Jetpack, Fluent Forms, Formidable, Forminator and Ninja Forms on one post with the comment form: every widget starts and each form goes through without a reload. |
+| mixed page | CF7, WPForms, Jetpack, Fluent Forms, Formidable, Forminator, Ninja Forms and MailPoet on one post with the comment form: every widget starts and each form goes through without a reload. |
 
 ## Layout
 
@@ -50,7 +50,7 @@ PLAYWRIGHT_CORE=<path to playwright-core> CHROMIUM=<path to chrome> node tests/i
 
 `deploy <commit>` puts that commit's plugin on the site instead of the working tree, which is
 how a change is compared with the code before it. `run.mjs cf7 wpforms` runs only those
-integrations (keys: `login register lostpw comments cf7 wpforms jetpack woo wooblocks wooblocks-user fluent formidable forminator ninja mixed gf`), and
+integrations (keys: `login register lostpw comments cf7 wpforms jetpack woo wooblocks wooblocks-user fluent formidable forminator ninja mailpoet mixed gf`), and
 `ONLY_CHECK="two forms"` only the checks whose name matches. Afterwards:
 
 ```bash
@@ -83,7 +83,8 @@ bash tests/integrations/wp/site.sh down
    - Optional: `beforeSubmit` (clear the previous attempt's message), `refusedByCaptcha` (when the
      plugin shows its own text instead of InfoPeak's), `twoForms: { path }`, `cached: { path }`,
      `mails: true` when an accepted submission sends mail, `refillAfterRefusal`,
-     `retryByOpening` (the refusal is an error page), `submitWithoutToken` (when the plugin's
+     `records: true` when an accepted submission is stored without mail (counted by the test
+     helper), `retryByOpening` (the refusal is an error page), `submitWithoutToken` (when the plugin's
      JavaScript would wait for a token), `noTwoForms` / `noCache` (reason shown as N/A).
 3. Add it to `run.mjs`, run it against the current release first (`site.sh deploy <tag>`) and then
    against the change.

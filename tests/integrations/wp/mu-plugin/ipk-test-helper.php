@@ -4,7 +4,7 @@
  * Description: Counts siteverify answers and outgoing mail, can simulate an unreachable captcha service. Never install on a real site.
  *
  * Endpoints (need ?ipk_key=IPK_TEST_KEY from wp-config.php):
- *   ?ipk_test=stats           {"calls","valid","invalid","failed","mails":[subjects],"product"}
+ *   ?ipk_test=stats           {"calls","valid","invalid","failed","mails":[subjects],"records","product"}
  *   ?ipk_test=outage&n=1      the next n siteverify requests fail as if the service were down
  *   ?ipk_test=reset           counters back to zero
  */
@@ -17,7 +17,7 @@ const IPK_TEST_SITEVERIFY = 'https://captcha.infopeak.io/api/v1/pow/siteverify';
 
 function ipk_test_stats() {
 	$s = get_option( 'ipk_test_stats' );
-	return is_array( $s ) ? $s : array( 'calls' => 0, 'valid' => 0, 'invalid' => 0, 'failed' => 0, 'mails' => array() );
+	return ( is_array( $s ) ? $s : array() ) + array( 'calls' => 0, 'valid' => 0, 'invalid' => 0, 'failed' => 0, 'mails' => array(), 'records' => 0 );
 }
 
 function ipk_test_bump( $key, $value = null ) {
@@ -82,3 +82,12 @@ add_filter( 'comment_flood_filter', '__return_false' );
 
 // Fluent Forms allows 5 stored submissions per IP in 30 seconds; the tests send more.
 add_filter( 'fluentform/prevent_malicious_attacks', '__return_false' );
+
+// Form plugins that store a submission without sending mail on the test site: each stored one
+// counts as a record.
+add_action( 'mailpoet_subscription_after_subscribe', function () {
+	ipk_test_bump( 'records' );
+} );
+
+// MailPoet makes an IP address wait longer after each subscription; the tests send many.
+add_filter( 'mailpoet_subscription_limit_enabled', '__return_false' );
