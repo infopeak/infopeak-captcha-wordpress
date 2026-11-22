@@ -86,6 +86,17 @@ add_action( 'woocommerce_store_api_checkout_update_customer_from_request', funct
 	if ( ! ipkcap_integration_active( 'enable_woo' ) || ! $request instanceof WP_REST_Request || 'POST' !== $request->get_method() || ! preg_match( '~^/wc/store(?:/v\d+)?/checkout$~', $request->get_route() ) ) {
 		return;
 	}
+	// Express payments (Apple Pay, Google Pay, Link) through WooPayments or Stripe can be
+	// started from the cart or a product page, where there is no widget. They are left to
+	// the wallet, as other captcha plugins for WooCommerce do.
+	if ( in_array( $request->get_param( 'payment_method' ), array( 'woocommerce_payments', 'stripe' ), true ) ) {
+		$payment_data = $request->get_param( 'payment_data' );
+		foreach ( is_array( $payment_data ) ? $payment_data : array() as $item ) {
+			if ( is_array( $item ) && isset( $item['key'] ) && in_array( $item['key'], array( 'express_payment_type', 'payment_request_type' ), true ) && ! empty( $item['value'] ) ) {
+				return;
+			}
+		}
+	}
 	$extensions = $request->get_param( 'extensions' );
 	$token      = is_array( $extensions ) && isset( $extensions['infopeak-captcha']['token'] ) && is_string( $extensions['infopeak-captcha']['token'] ) ? sanitize_text_field( $extensions['infopeak-captcha']['token'] ) : '';
 	if ( ! ipkcap_verify_token( $token ) ) {

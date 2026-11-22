@@ -4,7 +4,7 @@ Tags: captcha, spam, privacy, gdpr, login protection
 Requires at least: 5.8
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.6.0
+Stable tag: 1.7.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -38,9 +38,11 @@ Instead of tracking visitors or making them click traffic lights, it uses **proo
 * Fluent Forms forms (regular forms in Fluent Forms Free)
 * Formidable Forms forms (Formidable Forms Lite)
 * Forminator forms (not polls or quizzes)
-* WooCommerce checkout (classic checkout)
+* Ninja Forms forms (add the InfoPeak Captcha field to a form)
+* MailPoet subscription forms (every display type)
+* WooCommerce checkout (classic checkout and the Checkout block)
 
-Each can be toggled individually on the settings page. The widget is added to your forms automatically, so there is nothing to edit in Contact Form 7, WPForms, Jetpack Forms, Fluent Forms, Formidable Forms, Forminator or WooCommerce. In Gravity Forms you choose which forms to protect, under Form Settings.
+Each can be toggled individually on the settings page. The widget is added to your forms automatically, so there is nothing to edit in Contact Form 7, WPForms, Jetpack Forms, Fluent Forms, Formidable Forms, Forminator, MailPoet or WooCommerce. In Gravity Forms you choose which forms to protect, under Form Settings, and in Ninja Forms you add the InfoPeak Captcha field to the forms you want protected.
 
 **Setup takes two minutes**
 
@@ -112,7 +114,7 @@ Join the [InfoPeak partner programme](https://partner.infopeak.io/en/). You crea
 
 Yes. Turn them on under Settings → InfoPeak Captcha and the widget appears in every form, in front of the submit button. In Contact Form 7 you can also place it yourself with the `[infopeak_captcha]` tag. After each submission the widget fetches a fresh token by itself, so a visitor who corrects a mistake and sends again is not stopped.
 
-For WooCommerce the plugin protects the classic checkout, the one built with the `[woocommerce_checkout]` shortcode. The newer block-based checkout is not covered yet.
+For WooCommerce the plugin protects both the classic checkout (the `[woocommerce_checkout]` shortcode) and the Checkout block. In the Checkout block the widget appears above Place order, and the token is checked before WooCommerce stores the customer's details, creates the order or takes payment. Express payments through WooPayments or Stripe (Apple Pay, Google Pay, Link) can start on the cart or a product page, where there is no widget, so they are left to the wallet.
 
 = Does it work with Gravity Forms? =
 
@@ -142,6 +144,16 @@ Yes, Forminator's forms (the free version), including forms with several pages, 
 
 InfoPeak works next to Forminator's own CAPTCHA field (reCAPTCHA, hCaptcha or Turnstile). If a form has that field, both checks run; remove the field if you only want InfoPeak. "Save and continue later" drafts are saved without a check, as they are not sent on.
 
+= Does it work with Ninja Forms? =
+
+Yes, Ninja Forms (the free version). Add the InfoPeak Captcha field to each form you want protected, in the form builder, the same way as Ninja Forms' own reCAPTCHA field. Forms without the field are left as they are. The token is checked in Ninja Forms' own validation, before the submission is stored or any email is sent, the message appears under the field, and a visitor who corrects a mistake can send again without reloading the page.
+
+= Does it work with MailPoet? =
+
+Yes, every MailPoet subscription form: shortcode, block, widget, below posts and pages, pop-up, slide-in and fixed bar. When MailPoet is active, the widget appears in front of the subscribe button. It is on by default; to leave your MailPoet forms as they are, untick MailPoet under Settings → InfoPeak Captcha and save. The token is checked before the subscriber is saved and before any confirmation email is sent, and a refused attempt does not count towards MailPoet's own limit on sign-ups from one address.
+
+MailPoet's own CAPTCHA keeps working next to InfoPeak, so visitors who are not logged in would see both. To use only InfoPeak, set the CAPTCHA to Disabled under MailPoet → Settings → Advanced.
+
 = Does it work with caching plugins? =
 
 Yes. The widget is plain JavaScript loaded from captcha.infopeak.io and works on fully cached pages.
@@ -168,6 +180,13 @@ Yes - 10,000 verifications per month, free forever. Paid plans start at 100,000 
 6. The widget on the login form - verified automatically, no interaction needed.
 
 == Changelog ==
+
+= 1.7.0 =
+* New: protects Ninja Forms with an InfoPeak Captcha field. Add the field to the forms you want protected in the form builder; forms without it are left as they are. The token is checked in Ninja Forms' own validation, before the submission is stored or any email is sent.
+* New: protects MailPoet subscription forms of every kind: shortcode, block, widget, below posts and pages, pop-up, slide-in and fixed bar. The token is checked before the subscriber is saved and before any confirmation email. On by default; untick MailPoet under Settings → InfoPeak Captcha to turn it off. MailPoet's own CAPTCHA keeps working beside it; set it to Disabled under MailPoet → Settings → Advanced if you only want InfoPeak.
+* New: protects the WooCommerce Checkout block, for guests and logged-in customers. The widget appears above Place order, and the token is checked before WooCommerce stores the customer's details, creates the order or takes payment. Express payments through WooPayments or Stripe are left to the wallet. The classic checkout is unchanged.
+* If you use a page cache, clear it after updating. A page cached before the update has no widget, so its MailPoet form would be refused until the page is cached again.
+* Tested with WordPress 7.1.5 and PHP 8.3: Ninja Forms 3.16.1, MailPoet 5.45.2 and WooCommerce 11.3.1 (Checkout block and classic checkout, paying by cheque and cash on delivery), including two forms on one page, a page served from a page cache and phone-sized screens. Express payments (Apple Pay, Google Pay, Link) were not tested.
 
 = 1.6.0 =
 * New: protects Forminator forms (the free version). The widget is added in front of the submit button, on the last page of a form with several pages, and the token is checked in Forminator's own check of the submission, before it is saved and before any email is sent. A visitor who corrects a mistake can send again without reloading the page. Polls and quizzes are not protected.
@@ -224,6 +243,9 @@ Yes - 10,000 verifications per month, free forever. Paid plans start at 100,000 
 * Initial release: login, registration, lost-password and comment protection.
 
 == Upgrade Notice ==
+
+= 1.7.0 =
+Adds protection for Ninja Forms (add the field to a form), MailPoet subscription forms and the WooCommerce Checkout block. MailPoet and the Checkout block are protected right after the update; untick them under Settings → InfoPeak Captcha to turn them off. Clear your page cache after updating.
 
 = 1.6.0 =
 Adds protection for Forminator forms, on for all forms right after the update (untick it under Settings → InfoPeak Captcha to turn it off). Clear your page cache after updating.
