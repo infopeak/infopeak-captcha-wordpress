@@ -70,6 +70,10 @@ add_filter( 'registration_errors', function ( $errors ) {
 
 // Lost-password check.
 add_action( 'lostpassword_post', function ( $errors ) {
+	// An administrator sending a reset link from the Users screen has no form and no token.
+	if ( is_admin() && current_user_can( 'edit_users' ) ) {
+		return;
+	}
 	$s = ipkcap_get_settings();
 	if ( ipkcap_is_configured() && $s['enable_lostpw'] && ! ipkcap_posted_token_valid() ) {
 		$errors->add( 'ipkcap_failed', ipkcap_error_message() );
