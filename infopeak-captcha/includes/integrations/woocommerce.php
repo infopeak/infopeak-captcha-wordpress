@@ -1,7 +1,7 @@
 <?php
 /**
- * WooCommerce checkout: the classic checkout and the Checkout block. Loaded when WooCommerce
- * is active.
+ * WooCommerce: the classic checkout, the Checkout block and the My Account forms. Loaded
+ * when WooCommerce is active.
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -103,3 +103,57 @@ add_action( 'woocommerce_store_api_checkout_update_customer_from_request', funct
 		throw new \Automattic\WooCommerce\StoreApi\Exceptions\RouteException( 'infopeak_captcha_failed', esc_html( ipkcap_error_message() ), 400 );
 	}
 }, 10, 2 );
+
+/* -------------------------------------------------------------------------
+ * My Account: login, registration and lost password, and the login form at the classic
+ * checkout (the same login form). They follow the Login form, Registration form and Lost
+ * password form settings, like the forms on wp-login.php: the accounts are the same, and
+ * WooCommerce's lost-password form runs WordPress' own lostpassword_post check (core.php).
+ *
+ * Each form has its own check here, which WordPress' does not repeat: WooCommerce logs in
+ * with username/password (core.php only checks a login that posts log/pwd) and registers
+ * through wc_create_new_customer(), not register_new_user(). An account created while
+ * placing an order is checked once, with the order (above), not here.
+ * ---------------------------------------------------------------------- */
+
+function ipkcap_wc_account_form( $setting ) {
+	$s = ipkcap_get_settings();
+	if ( ipkcap_is_configured() && ! empty( $s[ $setting ] ) ) {
+		ipkcap_enqueue_script();
+		// WooCommerce's own row class gives the widget the same spacing as the fields around it.
+		echo '<div class="form-row ipkcap-wc-account">' . ipkcap_widget_html() . '</div>'; // phpcs:ignore WordPress.Security.EscapeOutput -- escaped in ipkcap_widget_html().
+	}
+}
+
+// Another check already refused the attempt: nothing happens, so the token is kept unspent
+// and the visitor sees one message.
+function ipkcap_wc_account_check( $error, $setting ) {
+	$s = ipkcap_get_settings();
+	if ( ipkcap_is_configured() && ! empty( $s[ $setting ] ) && $error instanceof WP_Error && ! $error->has_errors() && ! ipkcap_posted_token_valid() ) {
+		$error->add( 'ipkcap_failed', ipkcap_error_message() );
+	}
+	return $error;
+}
+
+add_action( 'woocommerce_login_form', function () {
+	ipkcap_wc_account_form( 'enable_login' );
+} );
+
+add_action( 'woocommerce_register_form', function () {
+	ipkcap_wc_account_form( 'enable_register' );
+} );
+
+add_action( 'woocommerce_lostpassword_form', function () {
+	ipkcap_wc_account_form( 'enable_lostpw' );
+} );
+
+// Runs before WooCommerce signs the customer in.
+add_filter( 'woocommerce_process_login_errors', function ( $error ) {
+	return ipkcap_wc_account_check( $error, 'enable_login' );
+}, 20 );
+
+// Runs before WooCommerce creates the account or sends any email. Only the My Account form
+// fires it; the checkout's account creation does not.
+add_filter( 'woocommerce_process_registration_errors', function ( $error ) {
+	return ipkcap_wc_account_check( $error, 'enable_register' );
+}, 20 );

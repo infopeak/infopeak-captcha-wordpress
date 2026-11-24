@@ -524,6 +524,9 @@ function ipkcap_render_settings_page() {
 							<label><input type="checkbox" name="ipkcap_settings[enable_register]" value="1" <?php checked( $s['enable_register'] ); ?>> <?php esc_html_e( 'Registration form', 'infopeak-captcha' ); ?></label><br>
 							<label><input type="checkbox" name="ipkcap_settings[enable_lostpw]" value="1" <?php checked( $s['enable_lostpw'] ); ?>> <?php esc_html_e( 'Lost password form', 'infopeak-captcha' ); ?></label><br>
 							<label><input type="checkbox" name="ipkcap_settings[enable_comments]" value="1" <?php checked( $s['enable_comments'] ); ?>> <?php esc_html_e( 'Comment form', 'infopeak-captcha' ); ?></label>
+							<?php if ( class_exists( 'WooCommerce' ) ) : ?>
+								<p class="description"><?php esc_html_e( 'WooCommerce: the login, registration and lost password forms on the My Account page and the login form at checkout follow these settings.', 'infopeak-captcha' ); ?></p>
+							<?php endif; ?>
 						</fieldset>
 					</td>
 				</tr>

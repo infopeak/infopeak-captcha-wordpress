@@ -294,7 +294,7 @@ export async function runChecks(a, env, browser, runner) {
 	if (a.twoForms) {
 		await runner.test(`${a.name} two forms on one page`, async () => {
 			const v = { ...v0, ...a.twoForms };
-			const { context, page } = await open(a, browser, env, v.path);
+			let { context, page } = await open(a, browser, env, v.path);
 			try {
 				assert((await page.locator(a.container).count()) === 2, 'two forms');
 				const [t0, t1] = [await fillAndToken(a, page, 0, v), await fillAndToken(a, page, 1, v)];
@@ -302,6 +302,12 @@ export async function runChecks(a, env, browser, runner) {
 				const p = await pageInfo(page);
 				assert(p.widgets === 2 && p.started === 2 && p.loaders === 1, 'two widgets, one loader: ' + JSON.stringify(p));
 				await expectAccepted(a, env, page, 1, v, await env.stats());
+				// reopen: sending form 1 leaves the page (for example it signs the visitor in), so form 0 is sent from a fresh visit.
+				if (a.twoForms.reopen) {
+					await context.close();
+					({ context, page } = await open(a, browser, env, v.path));
+					await fillAndToken(a, page, 0, v);
+				}
 				await expectAccepted(a, env, page, 0, v, await env.stats());
 			} finally {
 				await context.close();

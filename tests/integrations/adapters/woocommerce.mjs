@@ -1,12 +1,17 @@
 // WooCommerce classic checkout ([woocommerce_checkout] shortcode): placed with AJAX, the
-// page stays on a refusal and moves to "order received" on success.
+// page stays on a refusal and moves to "order received" on success. Also with "Create an
+// account?" ticked.
 const noticeSel = '.woocommerce-NoticeGroup-checkout, .woocommerce-error';
 
 export default {
 	key: 'woo',
 	name: 'WooCommerce checkout (classic)',
 	container: 'form.checkout',
-	variants: [{ label: 'AJAX', path: '/checkout/', ajax: true }],
+	variants: [
+		{ label: 'AJAX', path: '/checkout/', ajax: true },
+		// "Create an account?": the account is created with the order, under the same single check.
+		{ label: 'AJAX, create account', path: '/checkout/', ajax: true, createAccount: true },
+	],
 	noTwoForms: 'one checkout per page',
 	noCache: 'page caches never cache the checkout (WooCommerce marks it DONOTCACHEPAGE)',
 	mails: true,
@@ -14,8 +19,9 @@ export default {
 		const { product } = await env.stats();
 		await page.goto(env.url('/?add-to-cart=' + product), { waitUntil: 'domcontentloaded' });
 	},
-	async fill(page, c, n) {
+	async fill(page, c, n, v) {
 		const set = (id, v) => c.locator('#' + id).fill(v);
+		if (v && v.createAccount) await c.locator('#createaccount').check();
 		await set('billing_first_name', 'Synthetic');
 		await set('billing_last_name', 'Customer');
 		await set('billing_address_1', 'Testvej 1');

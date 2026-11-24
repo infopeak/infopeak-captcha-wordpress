@@ -50,7 +50,7 @@ PLAYWRIGHT_CORE=<path to playwright-core> CHROMIUM=<path to chrome> node tests/i
 
 `deploy <commit>` puts that commit's plugin on the site instead of the working tree, which is
 how a change is compared with the code before it. `run.mjs cf7 wpforms` runs only those
-integrations (keys: `login register lostpw comments cf7 wpforms jetpack woo wooblocks wooblocks-user fluent formidable forminator ninja mailpoet mixed gf`), and
+integrations (keys: `login register lostpw comments cf7 wpforms jetpack woo wooblocks wooblocks-user woo-login woo-register woo-lostpw woo-checkout-login fluent formidable forminator ninja mailpoet mixed gf`), and
 `ONLY_CHECK="two forms"` only the checks whose name matches. Afterwards:
 
 ```bash
@@ -81,7 +81,7 @@ bash tests/integrations/wp/site.sh down
    - `submit(page, container)`: click the plugin's own submit button.
    - `outcome(page, container)`: `'ok'`, `'refused'`, or `null` while there is no answer yet.
    - Optional: `beforeSubmit` (clear the previous attempt's message), `refusedByCaptcha` (when the
-     plugin shows its own text instead of InfoPeak's), `twoForms: { path }`, `cached: { path }`,
+     plugin shows its own text instead of InfoPeak's), `twoForms: { path }` (with `reopen: true` when sending the second form leaves the page, so the first is sent from a fresh visit), `cached: { path }`,
      `mails: true` when an accepted submission sends mail, `refillAfterRefusal`,
      `records: true` when an accepted submission is stored without mail (counted by the test
      helper), `retryByOpening` (the refusal is an error page), `submitWithoutToken` (when the plugin's

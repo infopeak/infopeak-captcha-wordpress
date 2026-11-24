@@ -11,7 +11,11 @@ function blocks(loggedIn) {
 		key: loggedIn ? 'wooblocks-user' : 'wooblocks',
 		name: 'WooCommerce Checkout block' + (loggedIn ? ' (logged in)' : ' (guest)'),
 		container: '.wp-block-woocommerce-checkout',
-		variants: [{ label: 'Store API', path: '/checkout-block/', ajax: true }],
+		variants: [
+			{ label: 'Store API', path: '/checkout-block/', ajax: true },
+			// "Create an account": the account is created with the order, under the same single check.
+			...(loggedIn ? [] : [{ label: 'Store API, create account', path: '/checkout-block/', ajax: true, createAccount: true }]),
+		],
 		noTwoForms: 'one checkout per page',
 		noCache: 'page caches never cache the checkout (WooCommerce marks it DONOTCACHEPAGE)',
 		mails: true,
@@ -27,8 +31,9 @@ function blocks(loggedIn) {
 			const { product } = await env.stats();
 			await page.goto(env.url('/?add-to-cart=' + product), { waitUntil: 'domcontentloaded' });
 		},
-		async fill(page, c, n) {
+		async fill(page, c, n, v) {
 			await c.locator('#email').waitFor({ timeout: 30000 });
+			if (v && v.createAccount) await c.locator('label', { hasText: 'Create an account' }).locator('input[type="checkbox"]').check();
 			// A returning customer's saved address is shown as a card until it is edited.
 			const edit = c.locator('.wc-block-components-address-card__edit');
 			if ((await edit.count()) && (await edit.first().isVisible())) await edit.first().click();
