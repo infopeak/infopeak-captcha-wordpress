@@ -307,6 +307,9 @@ export async function runChecks(a, env, browser, runner) {
 					await context.close();
 					({ context, page } = await open(a, browser, env, v.path));
 					await fillAndToken(a, page, 0, v);
+				} else if (!v.ajax) {
+					// Postback: form 0 is filled again on the redrawn page.
+					await fillAndToken(a, page, 0, v);
 				}
 				await expectAccepted(a, env, page, 0, v, await env.stats());
 			} finally {

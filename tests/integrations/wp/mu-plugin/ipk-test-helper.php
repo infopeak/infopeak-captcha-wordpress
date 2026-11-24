@@ -91,3 +91,43 @@ add_action( 'mailpoet_subscription_after_subscribe', function () {
 
 // MailPoet makes an IP address wait longer after each subscription; the tests send many.
 add_filter( 'mailpoet_subscription_limit_enabled', '__return_false' );
+
+// Mailchimp for WordPress: the Mailchimp API is answered here, so nothing leaves the test site
+// and no Mailchimp account is needed (test API key from wp/setup-content.php). Every address is
+// new to the list; an accepted sign-up counts as a record.
+add_filter( 'pre_http_request', function ( $pre, $args, $url ) {
+	if ( ! preg_match( '~^https://us1\.api\.mailchimp\.com/3\.0/([^?]*)~', $url, $m ) ) {
+		return $pre;
+	}
+	$method = isset( $args['method'] ) ? strtoupper( $args['method'] ) : 'GET';
+	$path   = trim( $m[1], '/' );
+	$code   = 200;
+	$body   = new stdClass();
+	if ( 'GET' === $method && preg_match( '~^lists/[^/]+/members/[0-9a-f]{32}$~', $path ) ) {
+		$code = 404;
+		$body = array( 'status' => 404, 'title' => 'Resource Not Found' );
+	} elseif ( 'POST' === $method && preg_match( '~^lists/[^/]+/members$~', $path ) ) {
+		$in   = json_decode( isset( $args['body'] ) ? (string) $args['body'] : '', true );
+		$mail = is_array( $in ) && isset( $in['email_address'] ) ? (string) $in['email_address'] : '';
+		$body = array( 'id' => md5( strtolower( $mail ) ), 'email_address' => $mail, 'status' => is_array( $in ) && isset( $in['status'] ) ? $in['status'] : 'subscribed' );
+	} elseif ( preg_match( '~^lists/[^/]+/merge-fields$~', $path ) ) {
+		$body = array( 'merge_fields' => array(), 'total_items' => 0 );
+	} elseif ( preg_match( '~^lists/[^/]+/interest-categories~', $path ) ) {
+		$body = array( 'categories' => array(), 'total_items' => 0 );
+	} elseif ( preg_match( '~^lists/[^/]+/members$~', $path ) ) {
+		$body = array( 'members' => array(), 'total_items' => 0 );
+	} elseif ( 'lists' === $path ) {
+		$body = array( 'lists' => array( array( 'id' => 'ipklist', 'web_id' => 1, 'name' => 'IPK test list', 'stats' => array( 'member_count' => 0 ) ) ), 'total_items' => 1 );
+	}
+	return array(
+		'headers'  => array(),
+		'body'     => wp_json_encode( $body ),
+		'response' => array( 'code' => $code, 'message' => 200 === $code ? 'OK' : 'Not Found' ),
+		'cookies'  => array(),
+		'filename' => null,
+	);
+}, 10, 3 );
+
+add_action( 'mc4wp_form_subscribed', function () {
+	ipk_test_bump( 'records' );
+} );

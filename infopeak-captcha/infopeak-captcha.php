@@ -2,7 +2,7 @@
 /**
  * Plugin Name:       InfoPeak Captcha
  * Plugin URI:        https://infopeak.io/products/captcha
- * Description:       Privacy-first, EU-hosted captcha for WordPress. No tracking, no cookies, no image puzzles - protects login, registration, password reset, comments, Contact Form 7, WPForms, Jetpack Forms, Gravity Forms, Fluent Forms, Formidable Forms, Forminator, Ninja Forms, MailPoet and WooCommerce checkout.
+ * Description:       Privacy-first, EU-hosted captcha for WordPress. No tracking, no cookies, no image puzzles - protects login, registration, password reset, comments, Contact Form 7, WPForms, Jetpack Forms, Gravity Forms, Fluent Forms, Formidable Forms, Forminator, Ninja Forms, MailPoet, Mailchimp for WordPress and WooCommerce.
  * Version:           1.7.0
  * Requires at least: 5.8
  * Requires PHP:      7.4
@@ -59,6 +59,7 @@ function ipkcap_get_settings() {
 		'enable_forminator' => 1,
 		'enable_ninja'      => 1,
 		'enable_mailpoet'   => 1,
+		'enable_mc4wp'      => 1,
 	);
 	$saved = get_option( 'ipkcap_settings', array() );
 	return wp_parse_args( is_array( $saved ) ? $saved : array(), $defaults );
@@ -367,6 +368,12 @@ function ipkcap_integrations() {
 				return defined( 'MAILPOET_VERSION' );
 			},
 		),
+		'mailchimp-for-wp' => array(
+			'plugin'  => 'mailchimp-for-wp.php',
+			'present' => function () {
+				return defined( 'MC4WP_VERSION' );
+			},
+		),
 	);
 }
 
@@ -446,6 +453,7 @@ function ipkcap_sanitize_settings( $input ) {
 		'enable_forminator' => empty( $input['enable_forminator'] ) ? 0 : 1,
 		'enable_ninja'      => empty( $input['enable_ninja'] ) ? 0 : 1,
 		'enable_mailpoet'   => empty( $input['enable_mailpoet'] ) ? 0 : 1,
+		'enable_mc4wp'      => empty( $input['enable_mc4wp'] ) ? 0 : 1,
 	);
 }
 
@@ -546,6 +554,7 @@ function ipkcap_render_settings_page() {
 								'enable_forminator' => array( __( 'Forminator', 'infopeak-captcha' ), defined( 'FORMINATOR_VERSION' ) ),
 								'enable_ninja'      => array( __( 'Ninja Forms', 'infopeak-captcha' ), class_exists( 'Ninja_Forms' ) ),
 								'enable_mailpoet'   => array( __( 'MailPoet', 'infopeak-captcha' ), defined( 'MAILPOET_VERSION' ) ),
+								'enable_mc4wp'      => array( __( 'Mailchimp for WordPress', 'infopeak-captcha' ), defined( 'MC4WP_VERSION' ) ),
 							);
 							foreach ( $ipkcap_plugins as $ipkcap_key => $ipkcap_plugin ) :
 								?>

@@ -300,7 +300,40 @@ ipk_mailpoet( 'IPK MailPoet below', array( 'below_posts' => array( 'enabled' => 
 ipk_mailpoet( 'IPK MailPoet popup', array( 'popup' => array( 'enabled' => '1', 'delay' => '0', 'cookieExpiration' => '0', 'pages' => array( 'selected' => array( (string) $mp_popup_page ) ), 'posts' => array( 'all' => '' ) ) ) );
 delete_transient( \MailPoet\Form\DisplayFormInWPContent::NO_FORM_TRANSIENT_KEY );
 
+// --- Mailchimp for WordPress ---
+// A test API key: the Mailchimp API is answered by the test helper (wp/mu-plugin), nothing
+// leaves the site. The form is MC4WP's default form, sent to the helper's list.
+update_option( 'mc4wp', array_merge( (array) get_option( 'mc4wp', array() ), array( 'api_key' => str_repeat( '0', 32 ) . '-us1' ) ) );
+function ipk_mc4wp( $title ) {
+	$content = '<p>
+	<label>Email address:
+		<input type="email" name="EMAIL" placeholder="Your email address" required />
+</label>
+</p>
+
+<p>
+	<input type="submit" value="Sign up" />
+</p>';
+	$args    = array( 'post_type' => 'mc4wp-form', 'post_status' => 'publish', 'post_title' => $title, 'post_content' => $content );
+	$id      = ipk_existing_id( 'mc4wp-form', $title );
+	if ( $id ) {
+		$args['ID'] = $id;
+		wp_update_post( wp_slash( $args ) );
+	} else {
+		$id = wp_insert_post( wp_slash( $args ) );
+	}
+	update_post_meta( $id, '_mc4wp_settings', array( 'lists' => array( 'ipklist' ), 'double_optin' => 0 ) );
+	update_post_meta( $id, 'text_subscribed', 'Thank you, your sign-up request was successful! IPK-MC4WP-OK' );
+	return (int) $id;
+}
+$mc4wp_one = ipk_mc4wp( 'IPK MC4WP' );
+$mc4wp_two = ipk_mc4wp( 'IPK MC4WP 2' );
+
 // --- Pages ---
+ipk_page( 'mc4wp', 'MC4WP', '[mc4wp_form id="' . $mc4wp_one . '"]' );
+ipk_page( 'mc4wp-block', 'MC4WP block', '<!-- wp:mailchimp-for-wp/form {"id":' . $mc4wp_one . '} /-->' );
+ipk_page( 'mc4wp-two', 'MC4WP two forms', '[mc4wp_form id="' . $mc4wp_one . '"]' . "\n\n" . '[mc4wp_form id="' . $mc4wp_two . '"]' );
+ipk_page( 'cached-mc4wp', 'MC4WP cached', '[mc4wp_form id="' . $mc4wp_one . '"]' );
 ipk_page( 'ninja', 'Ninja Forms', $nf_one );
 ipk_page( 'ninja-two', 'Ninja Forms two forms', $nf_one . "\n\n" . $nf_two );
 ipk_page( 'cached-ninja', 'Ninja Forms cached', $nf_one );

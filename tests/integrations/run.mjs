@@ -24,8 +24,9 @@ import formidable from './adapters/formidable.mjs';
 import forminator from './adapters/forminator.mjs';
 import ninja from './adapters/ninja-forms.mjs';
 import mailpoet from './adapters/mailpoet.mjs';
+import mc4wp from './adapters/mc4wp.mjs';
 
-const wpAdapters = [login, register, lostpw, comments, cf7, wpforms, jetpack, woo, wooBlocks, wooBlocksUser, wooLogin, wooRegister, wooLostpw, wooCheckoutLogin, fluent, formidable, forminator, ninja, mailpoet];
+const wpAdapters = [login, register, lostpw, comments, cf7, wpforms, jetpack, woo, wooBlocks, wooBlocksUser, wooLogin, wooRegister, wooLostpw, wooCheckoutLogin, fluent, formidable, forminator, ninja, mailpoet, mc4wp];
 const keys = process.argv.slice(2);
 const want = (key) => !keys.length || keys.includes(key);
 
