@@ -4,7 +4,7 @@ Tags: captcha, spam, privacy, gdpr, login protection
 Requires at least: 5.8
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.7.0
+Stable tag: 1.8.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -40,9 +40,11 @@ Instead of tracking visitors or making them click traffic lights, it uses **proo
 * Forminator forms (not polls or quizzes)
 * Ninja Forms forms (add the InfoPeak Captcha field to a form)
 * MailPoet subscription forms (every display type)
+* Mailchimp for WordPress sign-up forms
 * WooCommerce checkout (classic checkout and the Checkout block)
+* WooCommerce My Account login, registration and lost password, and the login form at checkout
 
-Each can be toggled individually on the settings page. The widget is added to your forms automatically, so there is nothing to edit in Contact Form 7, WPForms, Jetpack Forms, Fluent Forms, Formidable Forms, Forminator, MailPoet or WooCommerce. In Gravity Forms you choose which forms to protect, under Form Settings, and in Ninja Forms you add the InfoPeak Captcha field to the forms you want protected.
+Each can be toggled individually on the settings page. The widget is added to your forms automatically, so there is nothing to edit in Contact Form 7, WPForms, Jetpack Forms, Fluent Forms, Formidable Forms, Forminator, MailPoet, Mailchimp for WordPress or WooCommerce. In Gravity Forms you choose which forms to protect, under Form Settings, and in Ninja Forms you add the InfoPeak Captcha field to the forms you want protected.
 
 **Setup takes two minutes**
 
@@ -116,6 +118,8 @@ Yes. Turn them on under Settings → InfoPeak Captcha and the widget appears in 
 
 For WooCommerce the plugin protects both the classic checkout (the `[woocommerce_checkout]` shortcode) and the Checkout block. In the Checkout block the widget appears above Place order, and the token is checked before WooCommerce stores the customer's details, creates the order or takes payment. Express payments through WooPayments or Stripe (Apple Pay, Google Pay, Link) can start on the cart or a product page, where there is no widget, so they are left to the wallet.
 
+The login, registration and lost password forms on the WooCommerce My Account page, and the login form at checkout, are protected too. They follow the Login form, Registration form and Lost password form settings. An account created while placing an order is checked once, together with the order.
+
 = Does it work with Gravity Forms? =
 
 Yes. Open the form, go to Form Settings and turn on "Protect this form with InfoPeak Captcha". Forms you do not turn it on for are left exactly as they are, so you can move one form at a time. The widget appears in front of the submit button (on the last page of a multi-page form), and the token is checked in Gravity Forms' own validation, before the entry is saved and before any notification is sent. It works with normal and AJAX submissions and with file uploads.
@@ -154,6 +158,10 @@ Yes, every MailPoet subscription form: shortcode, block, widget, below posts and
 
 MailPoet's own CAPTCHA keeps working next to InfoPeak, so visitors who are not logged in would see both. To use only InfoPeak, set the CAPTCHA to Disabled under MailPoet → Settings → Advanced.
 
+= Does it work with Mailchimp for WordPress? =
+
+Yes. When Mailchimp for WordPress is active, the widget is added to every sign-up form automatically. It is on by default; to leave your sign-up forms as they are, untick Mailchimp for WordPress under Settings → InfoPeak Captcha and save. If your version of Mailchimp for WordPress has its own InfoPeak Captcha setting and you turned it on, those forms are left to it, so the captcha is never shown or checked twice.
+
 = Does it work with caching plugins? =
 
 Yes. The widget is plain JavaScript loaded from captcha.infopeak.io and works on fully cached pages.
@@ -180,6 +188,14 @@ Yes - 10,000 verifications per month, free forever. Paid plans start at 100,000 
 6. The widget on the login form - verified automatically, no interaction needed.
 
 == Changelog ==
+
+= 1.8.0 =
+* Fix: with WooCommerce active and "Lost password form" turned on, WooCommerce's own lost password form refused every request, so customers could not reset their password in the shop. It now has the widget and works.
+* Fix: an administrator can send a password reset link from the Users screen again. Before, the lost password check refused it.
+* New: protects the WooCommerce My Account login, registration and lost password forms, and the login form at checkout. They follow the Login form, Registration form and Lost password form settings. An account created while placing an order is checked once, together with the order.
+* New: protects Mailchimp for WordPress sign-up forms. On by default; untick Mailchimp for WordPress under Settings → InfoPeak Captcha to turn it off. Forms that use Mailchimp for WordPress' own InfoPeak Captcha setting are left to it.
+* If you use a page cache, clear it after updating. A page cached before the update has no widget, so its Mailchimp for WordPress form would be refused until the page is cached again.
+* Tested with WordPress 7.1.5 and PHP 8.3: WooCommerce 11.3.1 (My Account forms, checkout login and creating an account at checkout, classic and Checkout block) and Mailchimp for WordPress 4.15.0 (shortcode and block, two forms on one page, a page served from a page cache, phone-sized screens).
 
 = 1.7.0 =
 * New: protects Ninja Forms with an InfoPeak Captcha field. Add the field to the forms you want protected in the form builder; forms without it are left as they are. The token is checked in Ninja Forms' own validation, before the submission is stored or any email is sent.
@@ -243,6 +259,9 @@ Yes - 10,000 verifications per month, free forever. Paid plans start at 100,000 
 * Initial release: login, registration, lost-password and comment protection.
 
 == Upgrade Notice ==
+
+= 1.8.0 =
+Fixes WooCommerce's lost password form, which refused every request when "Lost password form" was on. Adds protection for the WooCommerce My Account forms and Mailchimp for WordPress sign-up forms. Clear your page cache after updating.
 
 = 1.7.0 =
 Adds protection for Ninja Forms (add the field to a form), MailPoet subscription forms and the WooCommerce Checkout block. MailPoet and the Checkout block are protected right after the update; untick them under Settings → InfoPeak Captcha to turn them off. Clear your page cache after updating.

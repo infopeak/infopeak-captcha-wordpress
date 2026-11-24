@@ -3,7 +3,7 @@
  * Plugin Name:       InfoPeak Captcha
  * Plugin URI:        https://infopeak.io/products/captcha
  * Description:       Privacy-first, EU-hosted captcha for WordPress. No tracking, no cookies, no image puzzles - protects login, registration, password reset, comments, Contact Form 7, WPForms, Jetpack Forms, Gravity Forms, Fluent Forms, Formidable Forms, Forminator, Ninja Forms, MailPoet, Mailchimp for WordPress and WooCommerce.
- * Version:           1.7.0
+ * Version:           1.8.0
  * Requires at least: 5.8
  * Requires PHP:      7.4
  * Author:            InfoPeak
@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'IPKCAP_VERSION', '1.7.0' );
+define( 'IPKCAP_VERSION', '1.8.0' );
 define( 'IPKCAP_API_ORIGIN', 'https://captcha.infopeak.io' );
 define( 'IPKCAP_FIELD', 'infopeak-captcha-response' );
 
